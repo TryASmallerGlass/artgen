@@ -1,0 +1,18 @@
+add_executable(artgen_tests
+    test_color.cpp
+    test_mandelbrot.cpp
+    test_algorithms.cpp
+    test_palette_gen.cpp
+    test_renderer.cpp
+    test_lsystem.cpp
+    test_postprocess.cpp
+)
+
+target_link_libraries(artgen_tests PRIVATE
+    artgen_core
+    Catch2::Catch2WithMain
+)
+
+include(CTest)
+include(Catch)
+catch_discover_tests(artgen_tests)

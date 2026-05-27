@@ -1,0 +1,16 @@
+{
+    "algorithm": "reaction_diffusion",
+    "output": "rd_worms.png",
+    "viewport": {
+        "real_min": 0, "real_max": 1,
+        "imag_min": 0, "imag_max": 1,
+        "width":  1024,
+        "height": 1024
+    },
+    "rd_preset": "worms",
+    "rd_steps": 10000,
+    "rd_seed": 7,
+    "palette": "fire",
+    "threads": 0,
+    "tile_size": 64
+}

@@ -1,0 +1,20 @@
+{
+    "algorithm": "mandelbrot",
+    "output": "mandelbrot_4k_aa.tiff",
+    "bit_depth": 16,
+    "viewport": {
+        "real_min": -2.5,
+        "real_max":  1.0,
+        "imag_min": -1.40625,
+        "imag_max":  1.40625,
+        "width":  3840,
+        "height": 2160
+    },
+    "max_iterations": 1500,
+    "color_cycle": 80.0,
+    "palette": "classic_mandelbrot",
+    "threads": 0,
+    "tile_size": 64,
+    "aa": 2,
+    "dpi": 300
+}

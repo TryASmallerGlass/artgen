@@ -1,0 +1,22 @@
+{
+    "algorithm": "mandelbrot",
+    "output": "mandelbrot_custom.png",
+    "viewport": {
+        "real_min": -2.5,
+        "real_max":  1.0,
+        "imag_min": -1.25,
+        "imag_max":  1.25,
+        "width":  1920,
+        "height": 1080
+    },
+    "max_iterations": 1000,
+    "color_cycle": 80.0,
+    "palette_lab": true,
+    "palette_stops": [
+        {"pos": 0.00, "color": "#000000"},
+        {"pos": 0.25, "color": "#003366"},
+        {"pos": 0.50, "color": "#FF6600"},
+        {"pos": 0.75, "color": "#FFCC00"},
+        {"pos": 1.00, "color": "#000000"}
+    ]
+}

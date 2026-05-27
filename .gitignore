@@ -1,0 +1,20 @@
+# Build artifacts
+build/
+out/
+.vs/
+*.user
+*.suo
+*.sdf
+*.opendb
+*.VC.db
+*.VC.opendb
+
+# Rendered output (large binary files)
+output/
+*.png
+*.tiff
+*.tif
+*.exr
+
+# CMake generated
+CMakeSettings.json

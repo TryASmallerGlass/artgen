@@ -1,0 +1,17 @@
+{
+    "algorithm": "mandelbrot",
+    "output": "mandelbrot_fire.png",
+    "viewport": {
+        "real_min": -0.7269,
+        "real_max": -0.7261,
+        "imag_min":  0.1883,
+        "imag_max":  0.1890,
+        "width":  3840,
+        "height": 2160
+    },
+    "max_iterations": 2000,
+    "escape_radius": 2.0,
+    "smooth_coloring": true,
+    "color_cycle": 48.0,
+    "palette": "fire"
+}

@@ -1,0 +1,17 @@
+{
+    "algorithm": "mandelbrot",
+    "output": "mandelbrot_electric_4k.png",
+    "viewport": {
+        "real_min": -2.5,
+        "real_max":  1.0,
+        "imag_min": -1.25,
+        "imag_max":  1.25,
+        "width":  3840,
+        "height": 2160
+    },
+    "max_iterations": 1500,
+    "escape_radius": 2.0,
+    "smooth_coloring": true,
+    "color_cycle": 96.0,
+    "palette": "electric"
+}

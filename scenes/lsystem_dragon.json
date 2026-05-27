@@ -1,0 +1,10 @@
+{
+  "algorithm": "lsystem",
+  "ls_preset": "dragon",
+  "ls_iterations": 14,
+  "ls_fg_color": "#4488FF",
+  "ls_bg_color": "#020408",
+  "viewport": { "width": 1024, "height": 1024 },
+  "output": "output/lsystem_dragon.png",
+  "threads": 1
+}

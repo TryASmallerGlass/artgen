@@ -1,0 +1,16 @@
+{
+    "algorithm": "reaction_diffusion",
+    "output": "rd_coral.png",
+    "viewport": {
+        "real_min": 0, "real_max": 1,
+        "imag_min": 0, "imag_max": 1,
+        "width":  1024,
+        "height": 1024
+    },
+    "rd_preset": "coral",
+    "rd_steps": 8000,
+    "rd_seed": 42,
+    "palette": "ice",
+    "threads": 0,
+    "tile_size": 64
+}

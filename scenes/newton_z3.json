@@ -1,0 +1,16 @@
+{
+    "algorithm": "newton",
+    "output": "newton_z3.png",
+    "viewport": {
+        "real_min": -2.0,
+        "real_max":  2.0,
+        "imag_min": -1.125,
+        "imag_max":  1.125,
+        "width":  1920,
+        "height": 1080
+    },
+    "newton_power": 3,
+    "max_iterations": 200,
+    "newton_tolerance": 1e-6,
+    "newton_saturation": 0.75
+}

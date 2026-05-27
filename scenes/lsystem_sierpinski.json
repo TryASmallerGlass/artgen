@@ -1,0 +1,10 @@
+{
+  "algorithm": "lsystem",
+  "ls_preset": "sierpinski",
+  "ls_iterations": 7,
+  "ls_fg_color": "#FFAA00",
+  "ls_bg_color": "#050302",
+  "viewport": { "width": 1024, "height": 1024 },
+  "output": "output/lsystem_sierpinski.png",
+  "threads": 1
+}

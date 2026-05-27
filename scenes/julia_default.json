@@ -1,0 +1,19 @@
+{
+    "algorithm": "julia",
+    "output": "julia.png",
+    "viewport": {
+        "real_min": -1.6,
+        "real_max":  1.6,
+        "imag_min": -0.9,
+        "imag_max":  0.9,
+        "width":  1920,
+        "height": 1080
+    },
+    "julia_cr": -0.7,
+    "julia_ci":  0.27015,
+    "max_iterations": 500,
+    "escape_radius": 2.0,
+    "smooth_coloring": true,
+    "color_cycle": 48.0,
+    "palette": "electric"
+}

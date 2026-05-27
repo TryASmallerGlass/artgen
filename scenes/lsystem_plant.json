@@ -1,0 +1,11 @@
+{
+  "algorithm": "lsystem",
+  "ls_preset": "plant",
+  "ls_iterations": 6,
+  "viewport": { "width": 1024, "height": 1024 },
+  "output": "output/lsystem_plant.png",
+  "threads": 1,
+  "postprocess": {
+    "vignette": 0.4
+  }
+}
