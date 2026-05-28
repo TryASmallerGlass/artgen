@@ -55,18 +55,69 @@ static bool parse_sweep(const std::string& s, SweepParam& out) {
     return true;
 }
 
+enum class ApplySetResult { Applied, UnknownKey, InvalidValue };
+
+static ApplySetResult apply_set(artgen::SceneConfig& cfg,
+                                const std::string& key, const std::string& val) {
+    // String-valued keys
+    if (key == "algorithm")     { cfg.algorithm_name = val; return ApplySetResult::Applied; }
+    if (key == "output")        { cfg.output_path    = val; return ApplySetResult::Applied; }
+    if (key == "palette")       { cfg.palette_name   = val; return ApplySetResult::Applied; }
+    if (key == "coloring_mode") { cfg.coloring_mode  = val; return ApplySetResult::Applied; }
+    if (key == "rd_preset")     { cfg.rd_preset      = val; return ApplySetResult::Applied; }
+    if (key == "ls_preset")     { cfg.ls_preset      = val; return ApplySetResult::Applied; }
+    if (key == "ls_fg_color")   { cfg.ls_fg_color    = val; return ApplySetResult::Applied; }
+    if (key == "ls_bg_color")   { cfg.ls_bg_color    = val; return ApplySetResult::Applied; }
+    // Numeric keys
+    double d = 0.0;
+    auto parse_number = [&]() {
+        if (std::sscanf(val.c_str(), "%lf", &d) != 1) return false;
+        return true;
+    };
+    if (key == "max_iterations")  { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.max_iterations  = static_cast<int>(d);      return ApplySetResult::Applied; }
+    if (key == "color_cycle")     { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.color_cycle     = d;                         return ApplySetResult::Applied; }
+    if (key == "escape_radius")   { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.escape_radius   = d;                         return ApplySetResult::Applied; }
+    if (key == "julia_cr")        { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.julia_cr        = d;                         return ApplySetResult::Applied; }
+    if (key == "julia_ci")        { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.julia_ci        = d;                         return ApplySetResult::Applied; }
+    if (key == "noise_scale")     { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.noise_scale     = static_cast<float>(d);    return ApplySetResult::Applied; }
+    if (key == "noise_seed")      { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.noise_seed      = static_cast<uint32_t>(d); return ApplySetResult::Applied; }
+    if (key == "rd_feed")         { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.rd_feed         = static_cast<float>(d);    return ApplySetResult::Applied; }
+    if (key == "rd_kill")         { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.rd_kill         = static_cast<float>(d);    return ApplySetResult::Applied; }
+    if (key == "palette_phase")   { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.palette_phase   = static_cast<float>(d);    return ApplySetResult::Applied; }
+    if (key == "aa")              { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.aa_samples      = static_cast<int>(d);      return ApplySetResult::Applied; }
+    if (key == "threads")         { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.thread_count    = static_cast<int>(d);      return ApplySetResult::Applied; }
+    if (key == "dpi")             { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.output_dpi      = static_cast<int>(d);      return ApplySetResult::Applied; }
+    if (key == "bit_depth")       { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.bit_depth       = static_cast<int>(d);      return ApplySetResult::Applied; }
+    if (key == "newton_power")    { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.newton_power    = static_cast<int>(d);      return ApplySetResult::Applied; }
+    if (key == "noise_octaves")   { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.noise_octaves   = static_cast<int>(d);      return ApplySetResult::Applied; }
+    if (key == "rd_steps")        { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.rd_steps        = static_cast<int>(d);      return ApplySetResult::Applied; }
+    if (key == "ls_iterations")   { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.ls_iterations   = static_cast<int>(d);      return ApplySetResult::Applied; }
+    if (key == "ls_angle")        { if (!parse_number()) return ApplySetResult::InvalidValue; cfg.ls_angle        = static_cast<float>(d);    return ApplySetResult::Applied; }
+    return ApplySetResult::UnknownKey;
+}
+
 static void apply_sweep(artgen::SceneConfig& cfg,
                          const std::string& key, double val) {
-    if      (key == "max_iterations")  cfg.max_iterations  = static_cast<int>(val);
-    else if (key == "color_cycle")     cfg.color_cycle     = val;
-    else if (key == "escape_radius")   cfg.escape_radius   = val;
-    else if (key == "julia_cr")        cfg.julia_cr        = val;
-    else if (key == "julia_ci")        cfg.julia_ci        = val;
-    else if (key == "noise_scale")     cfg.noise_scale     = static_cast<float>(val);
-    else if (key == "noise_seed")      cfg.noise_seed      = static_cast<uint32_t>(val);
-    else if (key == "rd_feed")         cfg.rd_feed         = static_cast<float>(val);
-    else if (key == "rd_kill")         cfg.rd_kill         = static_cast<float>(val);
-    else if (key == "palette_phase")   cfg.palette_phase   = static_cast<float>(val);
+    char buf[64];
+    std::snprintf(buf, sizeof(buf), "%.17g", val);
+    auto result = apply_set(cfg, key, buf);
+    if (result == ApplySetResult::UnknownKey)
+        std::fprintf(stderr, "Warning: unknown sweep key '%s'\n", key.c_str());
+    else if (result == ApplySetResult::InvalidValue)
+        std::fprintf(stderr, "Warning: invalid sweep value '%s' for key '%s'\n", buf, key.c_str());
+}
+
+// ── Info commands ────────────────────────────────────────────────────────────
+
+static void list_presets() {
+    std::printf("Palettes (palette=\"name\"):\n");
+    std::printf("  classic_mandelbrot  fire  ice  electric  grayscale\n\n");
+    std::printf("Generated palette types (palette_type=\"...\"):\n");
+    std::printf("  complementary  triadic  analogous  split_complementary\n\n");
+    std::printf("Reaction-diffusion presets (rd_preset=\"...\"):\n");
+    std::printf("  coral  mitosis  worms  maze  spots  fingerprint\n\n");
+    std::printf("L-System presets (ls_preset=\"...\"):\n");
+    std::printf("  plant  dragon  sierpinski  hilbert  tree\n");
 }
 
 // ── Render one frame ──────────────────────────────────────────────────────────
@@ -101,31 +152,46 @@ static artgen::PixelBuffer render_frame(const artgen::SceneConfig& cfg,
 // ── main ──────────────────────────────────────────────────────────────────────
 
 int main(int argc, char* argv[]) {
-    std::string config_path = "scenes/mandelbrot_default.json";
-    std::string sweep_spec;
-    std::string animate_spec;
-    bool        do_preview     = false;
-    bool        list_algorithms = false;
+    std::string              config_path = "scenes/mandelbrot_default.json";
+    std::string              sweep_spec;
+    std::string              animate_spec;
+    std::vector<std::string> set_specs;
+    bool                     do_preview  = false;
 
     for (int i = 1; i < argc; ++i) {
-        if (i + 1 < argc) {
-            if (std::strcmp(argv[i], "--config")  == 0) config_path  = argv[++i];
-            if (std::strcmp(argv[i], "--sweep")   == 0) sweep_spec   = argv[++i];
-            if (std::strcmp(argv[i], "--animate") == 0) animate_spec = argv[++i];
+        if (std::strcmp(argv[i], "--list-algorithms") == 0) {
+            std::printf("Registered algorithms:\n");
+            for (const auto& name : artgen::AlgorithmRegistry::names())
+                std::printf("  %s\n", name.c_str());
+            return 0;
         }
-        if (std::strcmp(argv[i], "--preview")          == 0) do_preview      = true;
-        if (std::strcmp(argv[i], "--list-algorithms")  == 0) list_algorithms = true;
-    }
-
-    if (list_algorithms) {
-        std::printf("Registered algorithms:\n");
-        for (const auto& name : artgen::AlgorithmRegistry::names())
-            std::printf("  %s\n", name.c_str());
-        return 0;
+        if (std::strcmp(argv[i], "--list-presets") == 0) { list_presets(); return 0; }
+        if (std::strcmp(argv[i], "--preview")      == 0) { do_preview = true; continue; }
+        if (i + 1 < argc) {
+            if (std::strcmp(argv[i], "--config")  == 0) { config_path  = argv[++i]; continue; }
+            if (std::strcmp(argv[i], "--sweep")   == 0) { sweep_spec   = argv[++i]; continue; }
+            if (std::strcmp(argv[i], "--animate") == 0) { animate_spec = argv[++i]; continue; }
+            if (std::strcmp(argv[i], "--set")     == 0) { set_specs.push_back(argv[++i]); continue; }
+        }
     }
 
     try {
         artgen::SceneConfig base = artgen::SceneConfig::from_json(config_path);
+
+        for (const auto& spec : set_specs) {
+            auto eq = spec.find('=');
+            if (eq == std::string::npos) {
+                std::fprintf(stderr, "Warning: --set '%s' ignored (expected key=value)\n", spec.c_str());
+                continue;
+            }
+            auto key = spec.substr(0, eq);
+            auto val = spec.substr(eq + 1);
+            auto result = apply_set(base, key, val);
+            if (result == ApplySetResult::UnknownKey)
+                std::fprintf(stderr, "Warning: --set unknown key '%s'\n", key.c_str());
+            else if (result == ApplySetResult::InvalidValue)
+                std::fprintf(stderr, "Warning: --set invalid value '%s' for key '%s'\n", val.c_str(), key.c_str());
+        }
 
         std::printf("Config : %s\n", config_path.c_str());
         std::printf("Size   : %d x %d\n",

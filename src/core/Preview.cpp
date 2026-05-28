@@ -9,8 +9,10 @@
 #include "artgen/output/PngWriter.h"
 #include <SDL.h>
 #include <algorithm>
+#include <cerrno>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <vector>
 
 namespace artgen {
@@ -77,7 +79,7 @@ void run_preview(IAlgorithm& algo, Viewport vp,
     }
 
     SDL_Window* window = SDL_CreateWindow(
-        "artgen preview  |  drag=pan  scroll=zoom  ←/→=palette  R=render  S=save  Q=quit",
+        "artgen preview  |  drag=pan  scroll=zoom  ←/→=palette  R=render  S=save  V=viewport  Q=quit",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         win_w, win_h,
         SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
@@ -146,6 +148,37 @@ void run_preview(IAlgorithm& algo, Viewport vp,
                     PngWriter::write(cur_frame, "preview_save.png");
                     std::printf("  Saved: preview_save.png\n");
                     break;
+
+                case SDLK_v: {
+                    std::printf("\n  Viewport JSON:\n"
+                                "  \"viewport\": {\n"
+                                "    \"width\": %d, \"height\": %d,\n"
+                                "    \"real_min\": %.10g, \"real_max\": %.10g,\n"
+                                "    \"imag_min\": %.10g, \"imag_max\": %.10g\n"
+                                "  }\n\n",
+                                IMG_W, IMG_H,
+                                vp.real_min, vp.real_max,
+                                vp.imag_min, vp.imag_max);
+                    FILE* vf = std::fopen("preview_viewport.json", "w");
+                    if (vf) {
+                        std::fprintf(vf,
+                            "{\n"
+                            "  \"viewport\": {\n"
+                            "    \"width\": %d, \"height\": %d,\n"
+                            "    \"real_min\": %.10g, \"real_max\": %.10g,\n"
+                            "    \"imag_min\": %.10g, \"imag_max\": %.10g\n"
+                            "  }\n"
+                            "}\n",
+                            IMG_W, IMG_H,
+                            vp.real_min, vp.real_max,
+                            vp.imag_min, vp.imag_max);
+                        std::fclose(vf);
+                        std::printf("  Saved: preview_viewport.json\n");
+                    } else {
+                        std::fprintf(stderr, "  Failed to save preview_viewport.json: %s\n", std::strerror(errno));
+                    }
+                    break;
+                }
 
                 case SDLK_LEFT:
                     palette_phase = std::fmod(palette_phase - 0.05f + 1.0f, 1.0f);
