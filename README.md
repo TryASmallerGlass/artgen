@@ -289,7 +289,7 @@ Launch with `--preview` after a single-frame render (requires `ARTGEN_PREVIEW=ON
 
 ## Inline overrides
 
-Override any scene parameter from the command line without editing JSON.
+Override supported scene parameters from the command line without editing JSON.
 Multiple `--set` flags are applied in order after the config is loaded.
 
 ```bash

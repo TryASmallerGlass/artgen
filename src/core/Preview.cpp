@@ -9,8 +9,10 @@
 #include "artgen/output/PngWriter.h"
 #include <SDL.h>
 #include <algorithm>
+#include <cerrno>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <vector>
 
 namespace artgen {
@@ -172,6 +174,8 @@ void run_preview(IAlgorithm& algo, Viewport vp,
                             vp.imag_min, vp.imag_max);
                         std::fclose(vf);
                         std::printf("  Saved: preview_viewport.json\n");
+                    } else {
+                        std::fprintf(stderr, "  Failed to save preview_viewport.json: %s\n", std::strerror(errno));
                     }
                     break;
                 }
