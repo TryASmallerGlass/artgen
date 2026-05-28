@@ -1,10 +1,12 @@
 #include "artgen/config/SceneConfig.h"
+#include "artgen/AlgorithmRegistry.h"
 #include "artgen/IAlgorithm.h"
 #include "artgen/PixelBuffer.h"
 #include "artgen/PostProcess.h"
 #include "artgen/Renderer.h"
 #include "artgen/output/PngWriter.h"
 #include "artgen/output/TiffWriter.h"
+#include "artgen/output/ExrWriter.h"
 #ifdef ARTGEN_WITH_SDL2
 #include "artgen/Preview.h"
 #endif
@@ -19,11 +21,14 @@
 
 static void save(const artgen::PixelBuffer& buf,
                  const std::string& path, int dpi) {
-    bool tiff = path.size() >= 5 &&
-                (path.substr(path.size()-5) == ".tiff" ||
-                 path.substr(path.size()-4) == ".tif");
-    if (tiff)
+    auto ends_with = [&](const std::string& ext) {
+        return path.size() >= ext.size() &&
+               path.compare(path.size() - ext.size(), ext.size(), ext) == 0;
+    };
+    if (ends_with(".tiff") || ends_with(".tif"))
         artgen::TiffWriter::write(buf, path, dpi);
+    else if (ends_with(".exr"))
+        artgen::ExrWriter::write(buf, path);
     else
         artgen::PngWriter::write(buf, path);
     std::printf("  Saved : %s\n", path.c_str());
@@ -99,7 +104,8 @@ int main(int argc, char* argv[]) {
     std::string config_path = "scenes/mandelbrot_default.json";
     std::string sweep_spec;
     std::string animate_spec;
-    bool        do_preview  = false;
+    bool        do_preview     = false;
+    bool        list_algorithms = false;
 
     for (int i = 1; i < argc; ++i) {
         if (i + 1 < argc) {
@@ -107,7 +113,15 @@ int main(int argc, char* argv[]) {
             if (std::strcmp(argv[i], "--sweep")   == 0) sweep_spec   = argv[++i];
             if (std::strcmp(argv[i], "--animate") == 0) animate_spec = argv[++i];
         }
-        if (std::strcmp(argv[i], "--preview") == 0) do_preview = true;
+        if (std::strcmp(argv[i], "--preview")          == 0) do_preview      = true;
+        if (std::strcmp(argv[i], "--list-algorithms")  == 0) list_algorithms = true;
+    }
+
+    if (list_algorithms) {
+        std::printf("Registered algorithms:\n");
+        for (const auto& name : artgen::AlgorithmRegistry::names())
+            std::printf("  %s\n", name.c_str());
+        return 0;
     }
 
     try {

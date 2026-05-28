@@ -1,5 +1,6 @@
 #pragma once
 #include "artgen/Viewport.h"
+#include "artgen/Palette.h"
 #include "artgen/PostProcess.h"
 #include <memory>
 #include <string>
@@ -81,6 +82,13 @@ struct SceneConfig {
 
     static SceneConfig from_json(const std::string& path);
     std::unique_ptr<IAlgorithm> create_algorithm() const;
+
+    // Build the Palette described by this config (palette_type, stops, phase …).
+    // Exposed so AlgorithmRegistry factories can call it without duplicating logic.
+    Palette build_palette() const;
+
+    // Optional path to an Adobe Color Swatch (.aco) file; overrides palette_* fields.
+    std::string aco_palette_path;
 };
 
 } // namespace artgen

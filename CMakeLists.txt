@@ -34,7 +34,14 @@ FetchContent_Declare(
     GIT_SHALLOW    TRUE
 )
 
-FetchContent_MakeAvailable(nlohmann_json glm Catch2 stb)
+FetchContent_Declare(
+    tinyexr
+    GIT_REPOSITORY https://github.com/syoyo/tinyexr.git
+    GIT_TAG        v1.0.9
+    GIT_SHALLOW    TRUE
+)
+set(TINYEXR_BUILD_SAMPLE OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(nlohmann_json glm Catch2 stb tinyexr)
 
 # ── Optional SDL2 preview window ──────────────────────────────────────────────
 option(ARTGEN_PREVIEW "Build interactive SDL2 preview window" ON)
@@ -61,6 +68,8 @@ add_library(artgen_core STATIC
     src/core/PaletteGenerator.cpp
     src/core/PostProcess.cpp
     src/core/Renderer.cpp
+    src/core/AlgorithmRegistry.cpp
+    src/core/AcoImport.cpp
     src/algorithms/EscapeTime.cpp
     src/algorithms/Mandelbrot.cpp
     src/algorithms/Julia.cpp
@@ -71,6 +80,7 @@ add_library(artgen_core STATIC
     src/algorithms/LSystem.cpp
     src/output/PngWriter.cpp
     src/output/TiffWriter.cpp
+    src/output/ExrWriter.cpp
     src/output/stb_impl.cpp
     src/config/SceneConfig.cpp
 )
@@ -78,11 +88,13 @@ add_library(artgen_core STATIC
 target_include_directories(artgen_core PUBLIC
     include
     ${stb_SOURCE_DIR}
+    ${tinyexr_SOURCE_DIR}
 )
 
 target_link_libraries(artgen_core PUBLIC
     nlohmann_json::nlohmann_json
     glm::glm
+    tinyexr
 )
 
 if(ARTGEN_PREVIEW)
