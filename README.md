@@ -79,6 +79,12 @@ cmake --build build --config Release
 
 # Animate palette phase (20 frames)
 ./build/Release/artgen --config scenes/mandelbrot_fire.json --animate 0.0:0.95:0.05
+
+# Override parameters without editing the JSON file
+./build/Release/artgen --config scenes/mandelbrot_default.json --set max_iterations=5000 --set palette=fire
+
+# List available presets (palettes, rd_preset, ls_preset values)
+./build/Release/artgen --list-presets
 ```
 
 ---
@@ -258,6 +264,7 @@ Launch with `--preview` after a single-frame render (requires `ARTGEN_PREVIEW=ON
 | `←` / `→` | Shift palette phase ±0.05 and re-render |
 | `R` | Re-render at current viewport |
 | `S` | Save current frame as `preview_save.png` |
+| `V` | Print viewport JSON to stdout; save `preview_viewport.json` |
 | `Q` / `Escape` | Close window |
 
 ---
@@ -277,6 +284,34 @@ Launch with `--preview` after a single-frame render (requires `ARTGEN_PREVIEW=ON
 # Palette phase animation (shorthand; no key= prefix needed)
 --animate 0.0:0.95:0.05
 ```
+
+---
+
+## Inline overrides
+
+Override any scene parameter from the command line without editing JSON.
+Multiple `--set` flags are applied in order after the config is loaded.
+
+```bash
+# Crank iterations on an existing scene
+./build/Release/artgen --config scenes/mandelbrot_default.json --set max_iterations=5000
+
+# Switch algorithm and write an EXR for HDR compositing
+./build/Release/artgen --config scenes/mandelbrot_default.json \
+  --set algorithm=julia --set julia_ci=0.156 --set output=julia.exr
+
+# Change palette and open the preview
+./build/Release/artgen --config scenes/newton_z3.json --set palette=fire --preview
+```
+
+**Settable string keys:** `algorithm`, `output`, `palette`, `coloring_mode`,
+`rd_preset`, `ls_preset`, `ls_fg_color`, `ls_bg_color`
+
+**Settable numeric keys:** `max_iterations`, `color_cycle`, `escape_radius`,
+`julia_cr`, `julia_ci`, `noise_scale`, `noise_seed`, `noise_octaves`,
+`rd_feed`, `rd_kill`, `rd_steps`, `palette_phase`,
+`aa`, `threads`, `dpi`, `bit_depth`,
+`newton_power`, `ls_iterations`, `ls_angle`
 
 ---
 
