@@ -3,6 +3,7 @@
 #include "artgen/PixelBuffer.h"
 #include "artgen/PostProcess.h"
 #include "artgen/Renderer.h"
+#include "artgen/output/ExrWriter.h"
 #include "artgen/output/PngWriter.h"
 #include "artgen/output/TiffWriter.h"
 #ifdef ARTGEN_WITH_SDL2
@@ -19,11 +20,14 @@
 
 static void save(const artgen::PixelBuffer& buf,
                  const std::string& path, int dpi) {
-    bool tiff = path.size() >= 5 &&
-                (path.substr(path.size()-5) == ".tiff" ||
-                 path.substr(path.size()-4) == ".tif");
-    if (tiff)
+    auto ext_is = [&](const char* e) {
+        auto p = path.rfind('.');
+        return p != std::string::npos && path.substr(p) == e;
+    };
+    if (ext_is(".tiff") || ext_is(".tif"))
         artgen::TiffWriter::write(buf, path, dpi);
+    else if (ext_is(".exr"))
+        artgen::ExrWriter::write(buf, path);
     else
         artgen::PngWriter::write(buf, path);
     std::printf("  Saved : %s\n", path.c_str());
@@ -50,18 +54,73 @@ static bool parse_sweep(const std::string& s, SweepParam& out) {
     return true;
 }
 
+// Apply a single key=value string override. Returns false for unknown keys.
+static bool apply_set(artgen::SceneConfig& cfg,
+                      const std::string& key, const std::string& val) {
+    // String-valued keys
+    if (key == "algorithm")     { cfg.algorithm_name = val; return true; }
+    if (key == "output")        { cfg.output_path    = val; return true; }
+    if (key == "palette")       { cfg.palette_name   = val; return true; }
+    if (key == "coloring_mode") { cfg.coloring_mode  = val; return true; }
+    if (key == "rd_preset")     { cfg.rd_preset      = val; return true; }
+    if (key == "ls_preset")     { cfg.ls_preset      = val; return true; }
+    if (key == "ls_fg_color")   { cfg.ls_fg_color    = val; return true; }
+    if (key == "ls_bg_color")   { cfg.ls_bg_color    = val; return true; }
+    // Numeric keys
+    double d = 0.0;
+    if (std::sscanf(val.c_str(), "%lf", &d) != 1) return false;
+    if (key == "max_iterations")  { cfg.max_iterations  = static_cast<int>(d);      return true; }
+    if (key == "color_cycle")     { cfg.color_cycle     = d;                         return true; }
+    if (key == "escape_radius")   { cfg.escape_radius   = d;                         return true; }
+    if (key == "julia_cr")        { cfg.julia_cr        = d;                         return true; }
+    if (key == "julia_ci")        { cfg.julia_ci        = d;                         return true; }
+    if (key == "noise_scale")     { cfg.noise_scale     = static_cast<float>(d);    return true; }
+    if (key == "noise_seed")      { cfg.noise_seed      = static_cast<uint32_t>(d); return true; }
+    if (key == "rd_feed")         { cfg.rd_feed         = static_cast<float>(d);    return true; }
+    if (key == "rd_kill")         { cfg.rd_kill         = static_cast<float>(d);    return true; }
+    if (key == "palette_phase")   { cfg.palette_phase   = static_cast<float>(d);    return true; }
+    if (key == "aa")              { cfg.aa_samples      = static_cast<int>(d);      return true; }
+    if (key == "threads")         { cfg.thread_count    = static_cast<int>(d);      return true; }
+    if (key == "dpi")             { cfg.output_dpi      = static_cast<int>(d);      return true; }
+    if (key == "bit_depth")       { cfg.bit_depth       = static_cast<int>(d);      return true; }
+    if (key == "newton_power")    { cfg.newton_power    = static_cast<int>(d);      return true; }
+    if (key == "noise_octaves")   { cfg.noise_octaves   = static_cast<int>(d);      return true; }
+    if (key == "rd_steps")        { cfg.rd_steps        = static_cast<int>(d);      return true; }
+    if (key == "ls_iterations")   { cfg.ls_iterations   = static_cast<int>(d);      return true; }
+    if (key == "ls_angle")        { cfg.ls_angle        = static_cast<float>(d);    return true; }
+    return false;
+}
+
 static void apply_sweep(artgen::SceneConfig& cfg,
                          const std::string& key, double val) {
-    if      (key == "max_iterations")  cfg.max_iterations  = static_cast<int>(val);
-    else if (key == "color_cycle")     cfg.color_cycle     = val;
-    else if (key == "escape_radius")   cfg.escape_radius   = val;
-    else if (key == "julia_cr")        cfg.julia_cr        = val;
-    else if (key == "julia_ci")        cfg.julia_ci        = val;
-    else if (key == "noise_scale")     cfg.noise_scale     = static_cast<float>(val);
-    else if (key == "noise_seed")      cfg.noise_seed      = static_cast<uint32_t>(val);
-    else if (key == "rd_feed")         cfg.rd_feed         = static_cast<float>(val);
-    else if (key == "rd_kill")         cfg.rd_kill         = static_cast<float>(val);
-    else if (key == "palette_phase")   cfg.palette_phase   = static_cast<float>(val);
+    char buf[64];
+    std::snprintf(buf, sizeof(buf), "%.17g", val);
+    if (!apply_set(cfg, key, buf))
+        std::fprintf(stderr, "Warning: unknown sweep key '%s'\n", key.c_str());
+}
+
+// ── Info commands ────────────────────────────────────────────────────────────
+
+static void list_algorithms() {
+    std::printf("Algorithms:\n");
+    std::printf("  %-22s  %s\n", "mandelbrot",         "Classic z\xb2 + c escape-time");
+    std::printf("  %-22s  %s\n", "julia",              "Configurable seed (julia_cr, julia_ci)");
+    std::printf("  %-22s  %s\n", "burning_ship",       "Absolute-value variant of Mandelbrot");
+    std::printf("  %-22s  %s\n", "newton",             "Root-finding fractal (z^n - 1)");
+    std::printf("  %-22s  %s\n", "noise",              "Simplex FBM (fractal Brownian motion)");
+    std::printf("  %-22s  %s\n", "reaction_diffusion", "Gray-Scott model; 6 named presets");
+    std::printf("  %-22s  %s\n", "lsystem",            "Turtle-graphics L-System; 5 named presets");
+}
+
+static void list_presets() {
+    std::printf("Palettes (palette=\"name\"):\n");
+    std::printf("  classic_mandelbrot  fire  ice  electric  grayscale\n\n");
+    std::printf("Generated palette types (palette_type=\"...\"):\n");
+    std::printf("  complementary  triadic  analogous  split_complementary\n\n");
+    std::printf("Reaction-diffusion presets (rd_preset=\"...\"):\n");
+    std::printf("  coral  mitosis  worms  maze  spots  fingerprint\n\n");
+    std::printf("L-System presets (ls_preset=\"...\"):\n");
+    std::printf("  plant  dragon  sierpinski  hilbert  tree\n");
 }
 
 // ── Render one frame ──────────────────────────────────────────────────────────
@@ -96,22 +155,36 @@ static artgen::PixelBuffer render_frame(const artgen::SceneConfig& cfg,
 // ── main ──────────────────────────────────────────────────────────────────────
 
 int main(int argc, char* argv[]) {
-    std::string config_path = "scenes/mandelbrot_default.json";
-    std::string sweep_spec;
-    std::string animate_spec;
-    bool        do_preview  = false;
+    std::string              config_path = "scenes/mandelbrot_default.json";
+    std::string              sweep_spec;
+    std::string              animate_spec;
+    std::vector<std::string> set_specs;
+    bool                     do_preview  = false;
 
     for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--list-algorithms") == 0) { list_algorithms(); return 0; }
+        if (std::strcmp(argv[i], "--list-presets")    == 0) { list_presets();    return 0; }
+        if (std::strcmp(argv[i], "--preview")         == 0) { do_preview = true; continue; }
         if (i + 1 < argc) {
-            if (std::strcmp(argv[i], "--config")  == 0) config_path  = argv[++i];
-            if (std::strcmp(argv[i], "--sweep")   == 0) sweep_spec   = argv[++i];
-            if (std::strcmp(argv[i], "--animate") == 0) animate_spec = argv[++i];
+            if (std::strcmp(argv[i], "--config")  == 0) { config_path  = argv[++i]; continue; }
+            if (std::strcmp(argv[i], "--sweep")   == 0) { sweep_spec   = argv[++i]; continue; }
+            if (std::strcmp(argv[i], "--animate") == 0) { animate_spec = argv[++i]; continue; }
+            if (std::strcmp(argv[i], "--set")     == 0) { set_specs.push_back(argv[++i]); continue; }
         }
-        if (std::strcmp(argv[i], "--preview") == 0) do_preview = true;
     }
 
     try {
         artgen::SceneConfig base = artgen::SceneConfig::from_json(config_path);
+
+        for (const auto& spec : set_specs) {
+            auto eq = spec.find('=');
+            if (eq == std::string::npos) {
+                std::fprintf(stderr, "Warning: --set '%s' ignored (expected key=value)\n", spec.c_str());
+                continue;
+            }
+            if (!apply_set(base, spec.substr(0, eq), spec.substr(eq + 1)))
+                std::fprintf(stderr, "Warning: --set unknown key '%s'\n", spec.substr(0, eq).c_str());
+        }
 
         std::printf("Config : %s\n", config_path.c_str());
         std::printf("Size   : %d x %d\n",

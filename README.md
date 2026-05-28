@@ -10,7 +10,7 @@ A C++20 command-line renderer for generative and fractal art, designed for wall 
 - **Organic algorithms** — Simplex Noise FBM, Reaction-Diffusion (Gray-Scott), L-Systems (5 presets)
 - **Coloring modes** — smooth (Linas Vepstas), histogram equalisation, orbit trap
 - **Palette system** — 5 built-in palettes, LAB-space interpolation, CMYK support, generated palettes (complementary/triadic/analogous/split-complementary), custom JSON stops, cyclic phase offset
-- **High-res output** — 8-bit PNG and 16-bit TIFF with DPI metadata; 4K in ~2.4 s on 16 threads
+- **High-res output** — 8-bit PNG, 16-bit TIFF with DPI metadata, and 32-bit float OpenEXR; 4K in ~2.4 s on 16 threads
 - **Post-processing** — gamma, contrast, brightness, saturation, vignette
 - **Multithreaded tile renderer** — configurable thread count, tile size, supersampling AA (1×–4×)
 - **Batch modes** — `--sweep` (parameter animation), `--animate` (palette phase cycling)
@@ -42,11 +42,18 @@ cmake -B build -DARTGEN_PREVIEW=OFF
 # Open the SDL2 preview window after rendering
 ./build/Release/artgen --config scenes/mandelbrot_default.json --preview
 
+# Override parameters without editing the JSON file
+./build/Release/artgen --config scenes/mandelbrot_default.json --set max_iterations=5000 --set palette=fire
+
 # Sweep a parameter across frames (e.g. zoom in)
 ./build/Release/artgen --config scenes/julia_default.json --sweep julia_ci=0.0:0.5:0.05
 
 # Export a palette-cycling animation (20 frames)
 ./build/Release/artgen --config scenes/mandelbrot_fire.json --animate 0.0:0.95:0.05
+
+# Discover available algorithms and presets
+./build/Release/artgen --list-algorithms
+./build/Release/artgen --list-presets
 ```
 
 ## Scene config reference
@@ -57,7 +64,7 @@ Scenes are JSON files in `scenes/`. All fields are optional and fall back to def
 {
   // ── Core ──────────────────────────────────────────────────────────────────
   "algorithm":    "mandelbrot",    // see Algorithms below
-  "output":       "out.png",       // .png or .tiff / .tif
+  "output":       "out.png",       // .png | .tiff / .tif | .exr (32-bit float)
   "bit_depth":    8,               // 8 or 16 (16 only meaningful for TIFF)
   "viewport": {
     "width": 1920, "height": 1080,
@@ -164,6 +171,7 @@ Launch with `--preview` after any render.
 | `←` / `→` | Shift palette phase ±0.05 and re-render |
 | `R` | Re-render at current viewport |
 | `S` | Save current frame as `preview_save.png` |
+| `V` | Print viewport JSON to stdout; save `preview_viewport.json` |
 | `Q` / `Escape` | Close window |
 
 ## Sweep and animate
@@ -179,6 +187,32 @@ Launch with `--preview` after any render.
 # Animate palette phase cycling (shorthand for --sweep palette_phase=…)
 --animate start:end:step
 ```
+
+## Inline overrides
+
+Override any scene parameter from the command line without editing JSON.
+Multiple `--set` flags are applied in order after the config is loaded.
+
+```bash
+# Crank iterations on an existing scene
+./build/Release/artgen --config scenes/mandelbrot_default.json --set max_iterations=5000
+
+# Switch algorithm and write an EXR for HDR compositing
+./build/Release/artgen --config scenes/mandelbrot_default.json \
+  --set algorithm=julia --set julia_ci=0.156 --set output=julia.exr
+
+# Change palette and open the preview
+./build/Release/artgen --config scenes/newton_z3.json --set palette=fire --preview
+```
+
+**Settable string keys:** `algorithm`, `output`, `palette`, `coloring_mode`,
+`rd_preset`, `ls_preset`, `ls_fg_color`, `ls_bg_color`
+
+**Settable numeric keys:** `max_iterations`, `color_cycle`, `escape_radius`,
+`julia_cr`, `julia_ci`, `noise_scale`, `noise_seed`, `noise_octaves`,
+`rd_feed`, `rd_kill`, `rd_steps`, `palette_phase`,
+`aa`, `threads`, `dpi`, `bit_depth`,
+`newton_power`, `ls_iterations`, `ls_angle`
 
 ## Running tests
 
@@ -202,14 +236,14 @@ artgen/
 │   ├── Renderer.h            # multithreaded tile renderer
 │   ├── Preview.h             # SDL2 interactive window
 │   ├── Color.h               # RGB/HSL/HSV/LAB/XYZ/CMYK conversions
-│   ├── algorithms/           # algorithm headers
+│   ├── algorithms/           # algorithm headers (incl. EscapeTime.h base class)
 │   ├── config/SceneConfig.h  # JSON scene loader
-│   └── output/               # PNG + TIFF writer headers
+│   └── output/               # PNG, TIFF, and EXR writer headers
 ├── src/
 │   ├── algorithms/           # algorithm implementations
 │   ├── core/                 # renderer, palette, post-process, preview
 │   ├── config/               # scene config parser + algorithm factory
-│   └── output/               # PNG (stb) + TIFF writers
+│   └── output/               # PNG (stb), TIFF, and EXR writers
 ├── tests/                    # Catch2 unit tests (67 cases)
 └── scenes/                   # example JSON scene configs
 ```

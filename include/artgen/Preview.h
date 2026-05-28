@@ -21,6 +21,7 @@ struct PreviewOptions {
 //   ← / →              shift palette phase ±0.05, re-render
 //   R                   re-render at current viewport (full quality)
 //   S                   save current frame as "preview_save.png"
+//   V                   print viewport JSON to stdout; save "preview_viewport.json"
 //   Q / Escape          close window
 // Returns when the window is closed.
 void run_preview(IAlgorithm& algo, Viewport vp,
