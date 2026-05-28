@@ -17,6 +17,7 @@ public:
     int          max_iterations  = 1000;
     double       escape_radius   = 2.0;
     double       color_cycle     = 64.0;
+    double       power           = 2.0; // iteration exponent — used in smooth coloring formula
     bool         smooth_coloring = true;
     ColoringMode coloring_mode   = ColoringMode::Smooth;
     Palette      palette;
