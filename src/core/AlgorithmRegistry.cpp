@@ -9,6 +9,11 @@
 #include "artgen/algorithms/ReactionDiffusion.h"
 #include "artgen/algorithms/LSystem.h"
 #include "artgen/algorithms/EscapeTime.h"
+#include "artgen/algorithms/Multibrot.h"
+#include "artgen/algorithms/Tricorn.h"
+#include "artgen/algorithms/Attractor.h"
+#include "artgen/algorithms/Plasma.h"
+#include "artgen/algorithms/Voronoi.h"
 #include <map>
 #include <mutex>
 
@@ -110,6 +115,52 @@ static void register_builtins() {
     // Accept "rd" as shorthand
     r("rd", [](const SceneConfig& cfg) -> std::unique_ptr<IAlgorithm> {
         return AlgorithmRegistry::create("reaction_diffusion", cfg);
+    });
+
+    r("multibrot", [](const SceneConfig& cfg) -> std::unique_ptr<IAlgorithm> {
+        auto a = std::make_unique<MultibrotAlgorithm>();
+        apply_escape(*a, cfg, cfg.build_palette());
+        a->power = cfg.multibrot_power;   // also updates smooth-coloring log base
+        return a;
+    });
+
+    r("tricorn", [](const SceneConfig& cfg) -> std::unique_ptr<IAlgorithm> {
+        auto a = std::make_unique<TricornAlgorithm>();
+        apply_escape(*a, cfg, cfg.build_palette());
+        return a;
+    });
+
+    r("attractor", [](const SceneConfig& cfg) -> std::unique_ptr<IAlgorithm> {
+        auto a = std::make_unique<AttractorAlgorithm>();
+        if (cfg.attractor_type == "dejong") a->type = AttractorType::DeJong;
+        a->a          = cfg.attractor_a;
+        a->b          = cfg.attractor_b;
+        a->c          = cfg.attractor_c;
+        a->d          = cfg.attractor_d;
+        a->iterations = cfg.attractor_iterations;
+        a->palette    = cfg.build_palette();
+        return a;
+    });
+
+    r("plasma", [](const SceneConfig& cfg) -> std::unique_ptr<IAlgorithm> {
+        auto a = std::make_unique<PlasmaAlgorithm>();
+        a->roughness = cfg.plasma_roughness;
+        a->seed      = cfg.plasma_seed;
+        a->octaves   = cfg.plasma_octaves;
+        a->palette   = cfg.build_palette();
+        return a;
+    });
+
+    r("voronoi", [](const SceneConfig& cfg) -> std::unique_ptr<IAlgorithm> {
+        auto a = std::make_unique<VoronoiAlgorithm>();
+        a->num_seeds = cfg.voronoi_num_seeds;
+        a->seed      = cfg.voronoi_seed;
+        if      (cfg.voronoi_mode == "distance") a->mode = VoronoiMode::Distance;
+        else if (cfg.voronoi_mode == "edge")     a->mode = VoronoiMode::Edge;
+        if      (cfg.voronoi_metric == "manhattan")  a->metric = VoronoiMetric::Manhattan;
+        else if (cfg.voronoi_metric == "chebyshev")  a->metric = VoronoiMetric::Chebyshev;
+        a->palette = cfg.build_palette();
+        return a;
     });
 
     r("lsystem", [](const SceneConfig& cfg) -> std::unique_ptr<IAlgorithm> {

@@ -62,6 +62,28 @@ struct SceneConfig {
     uint32_t rd_seed   = 42;
     std::string rd_preset; // "coral" "mitosis" "worms" "maze" "spots" "fingerprint"
 
+    // Multibrot
+    double multibrot_power = 3.0;
+
+    // Strange attractor
+    std::string attractor_type       = "clifford"; // "clifford" | "dejong"
+    double      attractor_a          = -1.4;
+    double      attractor_b          =  1.6;
+    double      attractor_c          =  1.0;
+    double      attractor_d          =  0.7;
+    int         attractor_iterations = 5'000'000;
+
+    // Plasma / Diamond-Square
+    float    plasma_roughness = 0.5f;
+    uint32_t plasma_seed      = 42;
+    int      plasma_octaves   = 8;
+
+    // Voronoi
+    int         voronoi_num_seeds = 32;
+    uint32_t    voronoi_seed      = 42;
+    std::string voronoi_mode      = "cells";    // "cells" | "distance" | "edge"
+    std::string voronoi_metric    = "euclidean"; // "euclidean" | "manhattan" | "chebyshev"
+
     // L-System
     std::string ls_preset;     // "plant" "dragon" "sierpinski" "hilbert" "tree"
     std::string ls_axiom;

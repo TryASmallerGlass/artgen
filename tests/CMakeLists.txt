@@ -8,6 +8,7 @@ add_executable(artgen_tests
     test_postprocess.cpp
     test_registry.cpp
     test_output.cpp
+    test_new_algorithms.cpp
 )
 
 target_link_libraries(artgen_tests PRIVATE

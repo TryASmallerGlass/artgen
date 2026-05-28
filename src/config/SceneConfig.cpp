@@ -103,6 +103,28 @@ SceneConfig SceneConfig::from_json(const std::string& path) {
     if (j.contains("rd_seed"))    cfg.rd_seed   = static_cast<uint32_t>(int(j["rd_seed"]));
     if (j.contains("rd_preset"))  cfg.rd_preset = j["rd_preset"];
 
+    // Multibrot
+    if (j.contains("multibrot_power"))       cfg.multibrot_power       = j["multibrot_power"];
+
+    // Strange attractor
+    if (j.contains("attractor_type"))        cfg.attractor_type        = j["attractor_type"];
+    if (j.contains("attractor_a"))           cfg.attractor_a           = j["attractor_a"];
+    if (j.contains("attractor_b"))           cfg.attractor_b           = j["attractor_b"];
+    if (j.contains("attractor_c"))           cfg.attractor_c           = j["attractor_c"];
+    if (j.contains("attractor_d"))           cfg.attractor_d           = j["attractor_d"];
+    if (j.contains("attractor_iterations"))  cfg.attractor_iterations  = j["attractor_iterations"];
+
+    // Plasma
+    if (j.contains("plasma_roughness"))      cfg.plasma_roughness      = j["plasma_roughness"];
+    if (j.contains("plasma_seed"))           cfg.plasma_seed           = static_cast<uint32_t>(int(j["plasma_seed"]));
+    if (j.contains("plasma_octaves"))        cfg.plasma_octaves        = j["plasma_octaves"];
+
+    // Voronoi
+    if (j.contains("voronoi_seeds"))         cfg.voronoi_num_seeds     = j["voronoi_seeds"];
+    if (j.contains("voronoi_seed"))          cfg.voronoi_seed          = static_cast<uint32_t>(int(j["voronoi_seed"]));
+    if (j.contains("voronoi_mode"))          cfg.voronoi_mode          = j["voronoi_mode"];
+    if (j.contains("voronoi_metric"))        cfg.voronoi_metric        = j["voronoi_metric"];
+
     // L-System
     if (j.contains("ls_preset"))     cfg.ls_preset    = j["ls_preset"];
     if (j.contains("ls_axiom"))      cfg.ls_axiom     = j["ls_axiom"];

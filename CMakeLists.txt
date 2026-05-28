@@ -78,6 +78,11 @@ add_library(artgen_core STATIC
     src/algorithms/NoiseField.cpp
     src/algorithms/ReactionDiffusion.cpp
     src/algorithms/LSystem.cpp
+    src/algorithms/Multibrot.cpp
+    src/algorithms/Tricorn.cpp
+    src/algorithms/Attractor.cpp
+    src/algorithms/Plasma.cpp
+    src/algorithms/Voronoi.cpp
     src/output/PngWriter.cpp
     src/output/TiffWriter.cpp
     src/output/ExrWriter.cpp
