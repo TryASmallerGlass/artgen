@@ -32,6 +32,7 @@ void NovaAlgorithm::render(PixelBuffer& buf, const Viewport& vp) const {
                 }
 
                 // Newton step:  z -= R * (z^p - 1) / (p * z^{p-1})  + c
+                const cx z_prev = z;
                 const cx zp_minus1 = std::pow(z, p) - cx(1.0);
                 const cx denom     = cx(static_cast<double>(p)) * std::pow(z, p - 1);
                 if (std::abs(denom) < 1e-12) break;
@@ -39,7 +40,10 @@ void NovaAlgorithm::render(PixelBuffer& buf, const Viewport& vp) const {
                 z -= relaxation * zp_minus1 / denom;
                 z += c;
 
-                if (std::abs(zp_minus1) < tolerance) {
+                // Orbital convergence: the iteration has settled when z stops moving.
+                // This catches fixed points of the full Nova map F(z) = z - R*f/f' + c,
+                // not only roots of z^p = 1 (which the +c term would immediately disturb).
+                if (std::abs(z - z_prev) < tolerance) {
                     converged = true;
                     break;
                 }
