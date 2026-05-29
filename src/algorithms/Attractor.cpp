@@ -18,6 +18,12 @@ void AttractorAlgorithm::advance(double& x, double& y) const {
         nx = std::sin(a * y) - std::cos(b * x);
         ny = std::sin(c * x) - std::cos(d * y);
         break;
+    case AttractorType::Ikeda: {
+        double tau = 0.4 - 6.0 / (1.0 + x * x + y * y);
+        nx = 1.0 + u * (x * std::cos(tau) - y * std::sin(tau));
+        ny =       u * (x * std::sin(tau) + y * std::cos(tau));
+        break;
+    }
     case AttractorType::Clifford:
     default:
         nx = std::sin(a * y) + c * std::cos(a * x);

@@ -66,11 +66,12 @@ struct SceneConfig {
     double multibrot_power = 3.0;
 
     // Strange attractor
-    std::string attractor_type       = "clifford"; // "clifford" | "dejong"
+    std::string attractor_type       = "clifford"; // "clifford" | "dejong" | "ikeda"
     double      attractor_a          = -1.4;
     double      attractor_b          =  1.6;
     double      attractor_c          =  1.0;
     double      attractor_d          =  0.7;
+    double      attractor_u          =  0.9;   // Ikeda: tuning parameter
     int         attractor_iterations = 5'000'000;
 
     // Plasma / Diamond-Square
@@ -92,6 +93,40 @@ struct SceneConfig {
     float       ls_angle       = 25.7f;
     std::string ls_fg_color    = "#33CC55";
     std::string ls_bg_color    = "#080D08";
+
+    // Lyapunov fractal
+    std::string lyapunov_sequence   = "AB";  // 'A' = real coord, 'B' = imag coord
+    int         lyapunov_warmup     = 200;
+    int         lyapunov_iterations = 1000;
+    double      lyapunov_seed_x     = 0.5;
+
+    // Nova fractal
+    int         nova_power          = 3;
+    double      nova_relaxation     = 1.0;
+    std::string nova_type           = "mandelbrot"; // "mandelbrot" | "julia"
+    double      nova_seed_r         = 1.0;
+    double      nova_seed_i         = 0.0;
+    int         nova_max_iterations = 256;
+    double      nova_tolerance      = 1e-6;
+    double      nova_escape_radius  = 1e6;
+    float       nova_saturation     = 0.8f;
+
+    // Cyclic Cellular Automaton
+    std::string cca_neighborhood    = "moore"; // "moore" | "vonneumann"
+    int         cca_states          = 12;
+    int         cca_steps           = 500;
+    uint32_t    cca_seed            = 42;
+
+    // Physarum Polycephalum (slime mould)
+    int      physarum_num_agents     = 200'000;
+    int      physarum_steps          = 400;
+    float    physarum_sensor_angle   = 45.0f;
+    float    physarum_sensor_dist    = 9.0f;
+    float    physarum_rotation_angle = 45.0f;
+    float    physarum_step_size      = 1.0f;
+    float    physarum_deposit        = 5.0f;
+    float    physarum_decay          = 0.95f;
+    uint32_t physarum_seed           = 42;
 
     // Post-processing (applied after render)
     PostProcessParams postprocess;

@@ -1,0 +1,4 @@
+{"algorithm":"voronoi","output":"gallery/voronoi_4.png",
+ "viewport":{"real_min":0,"real_max":1,"imag_min":0,"imag_max":1,"width":1080,"height":1080},
+ "voronoi_seeds":32,"voronoi_mode":"cells","voronoi_metric":"manhattan","voronoi_seed":314,
+ "palette_type":"complementary","palette_hsl":[60.0,0.9,0.5]}

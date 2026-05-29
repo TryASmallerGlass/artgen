@@ -1,0 +1,3 @@
+{"algorithm":"plasma","output":"gallery/plasma_3.png",
+ "viewport":{"real_min":0,"real_max":1,"imag_min":0,"imag_max":1,"width":1920,"height":1080},
+ "plasma_roughness":0.75,"plasma_octaves":8,"plasma_seed":777,"palette":"electric"}
