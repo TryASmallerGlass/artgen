@@ -1,0 +1,9 @@
+{
+    "algorithm": "lyapunov",
+    "output": "gallery/lyapunov_3.png",
+    "viewport": { "real_min": 2.0, "real_max": 4.0, "imag_min": 2.0, "imag_max": 4.0, "width": 1920, "height": 1920 },
+    "lyapunov_sequence": "BABABAB",
+    "lyapunov_warmup": 200,
+    "lyapunov_iterations": 1000,
+    "palette": "electric"
+}

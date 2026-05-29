@@ -1,0 +1,15 @@
+{
+    "algorithm": "physarum",
+    "output": "gallery/physarum_3.png",
+    "viewport": { "width": 1080, "height": 1080, "real_min": 0, "real_max": 1, "imag_min": 0, "imag_max": 1 },
+    "physarum_num_agents": 200000,
+    "physarum_steps": 400,
+    "physarum_sensor_angle": 67.5,
+    "physarum_sensor_dist": 7.0,
+    "physarum_rotation_angle": 60.0,
+    "physarum_step_size": 1.0,
+    "physarum_deposit": 5.0,
+    "physarum_decay": 0.95,
+    "physarum_seed": 777,
+    "palette": "ice"
+}

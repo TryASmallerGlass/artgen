@@ -1,0 +1,3 @@
+{"algorithm":"reaction_diffusion","output":"gallery/rd_5.png",
+ "viewport":{"real_min":0,"real_max":1,"imag_min":0,"imag_max":1,"width":1024,"height":1024},
+ "rd_preset":"fingerprint","rd_steps":8000,"rd_seed":1234,"palette":"fire"}

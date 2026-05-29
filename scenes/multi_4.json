@@ -1,0 +1,3 @@
+{"algorithm":"multibrot","output":"gallery/multi_4.png",
+ "viewport":{"real_min":-1.8,"real_max":1.8,"imag_min":-1.8,"imag_max":1.8,"width":1080,"height":1080},
+ "multibrot_power":6.0,"max_iterations":1200,"palette_type":"triadic","palette_hsl":[120.0,0.85,0.5]}

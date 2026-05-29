@@ -1,5 +1,6 @@
 #include "artgen/AlgorithmRegistry.h"
 #include "artgen/config/SceneConfig.h"
+#include <cstdio>
 #include <sstream>
 #include "artgen/algorithms/Mandelbrot.h"
 #include "artgen/algorithms/Julia.h"
@@ -14,6 +15,10 @@
 #include "artgen/algorithms/Attractor.h"
 #include "artgen/algorithms/Plasma.h"
 #include "artgen/algorithms/Voronoi.h"
+#include "artgen/algorithms/Lyapunov.h"
+#include "artgen/algorithms/Nova.h"
+#include "artgen/algorithms/CyclicCA.h"
+#include "artgen/algorithms/Physarum.h"
 #include <map>
 #include <mutex>
 
@@ -139,6 +144,17 @@ static void register_builtins() {
         a->d          = cfg.attractor_d;
         a->iterations = cfg.attractor_iterations;
         a->palette    = cfg.build_palette();
+        // Warn if the default viewport is likely to clip the orbit entirely.
+        // Clifford and De Jong orbits are bounded by the trig functions (roughly
+        // ±3 in each direction) so a very tight viewport can hide the attractor.
+        const double rw = cfg.viewport.real_max - cfg.viewport.real_min;
+        const double iw = cfg.viewport.imag_max - cfg.viewport.imag_min;
+        if (rw < 0.5 || iw < 0.5)
+            std::fprintf(stderr,
+                "Warning [attractor]: viewport is very small (%.2f x %.2f). "
+                "The orbit may fall outside it entirely. "
+                "Recommended: real/imag range of at least 6 units centred on 0.\n",
+                rw, iw);
         return a;
     });
 
@@ -160,6 +176,137 @@ static void register_builtins() {
         if      (cfg.voronoi_metric == "manhattan")  a->metric = VoronoiMetric::Manhattan;
         else if (cfg.voronoi_metric == "chebyshev")  a->metric = VoronoiMetric::Chebyshev;
         a->palette = cfg.build_palette();
+        return a;
+    });
+
+    // ── Ikeda map attractor ───────────────────────────────────────────────────
+
+    r("ikeda", [](const SceneConfig& cfg) -> std::unique_ptr<IAlgorithm> {
+        // Parameter boundary check: u controls nonlinearity.
+        //   u < 0.7  → the map settles onto a periodic orbit, not a strange
+        //               attractor.  The density histogram will be near-black.
+        //   u > 0.98 → valid but the attractor becomes very diffuse.
+        if (cfg.attractor_u < 0.75)
+            std::fprintf(stderr,
+                "Warning [ikeda]: attractor_u=%.3f is below 0.75. "
+                "The Ikeda map will produce a periodic orbit rather than a "
+                "chaotic strange attractor — the output will be near-black. "
+                "Recommended range: 0.75 – 0.90.\n",
+                cfg.attractor_u);
+        else if (cfg.attractor_u > 0.90)
+            std::fprintf(stderr,
+                "Warning [ikeda]: attractor_u=%.3f is above 0.90. "
+                "The Ikeda map enters periodic orbit windows above this value — "
+                "the output is likely to be near-black or very sparse. "
+                "Recommended range: 0.75 – 0.90.\n",
+                cfg.attractor_u);
+
+        auto a   = std::make_unique<AttractorAlgorithm>();
+        a->type  = AttractorType::Ikeda;
+        a->u     = cfg.attractor_u;
+        a->iterations = cfg.attractor_iterations;
+        a->warmup     = 1000;
+        a->palette    = cfg.build_palette();
+        return a;
+    });
+
+    // ── Lyapunov fractal ──────────────────────────────────────────────────────
+
+    r("lyapunov", [](const SceneConfig& cfg) -> std::unique_ptr<IAlgorithm> {
+        // The logistic map r*x*(1-x) only remains bounded for r in (0, 4].
+        // Viewport axes map to the 'a' (real) and 'b' (imag) parameters.
+        // Values outside this range cause divergence → near-black output.
+        const double rmin = cfg.viewport.real_min, rmax = cfg.viewport.real_max;
+        const double imin = cfg.viewport.imag_min, imax = cfg.viewport.imag_max;
+        if (rmin < 0.0 || rmax > 4.0 || imin < 0.0 || imax > 4.0)
+            std::fprintf(stderr,
+                "Warning [lyapunov]: viewport (%.2f–%.2f, %.2f–%.2f) extends "
+                "outside the valid logistic-map range (0, 4]. "
+                "Pixels in the out-of-range region will be black. "
+                "Recommended viewport: real and imag both within [2.0, 4.0].\n",
+                rmin, rmax, imin, imax);
+
+        // Sequence must contain at least one 'A' and one 'B'; a sequence of only
+        // one type degenerates to a fixed-r logistic map (spatially constant output).
+        const auto& seq = cfg.lyapunov_sequence;
+        const bool has_a = seq.find('A') != std::string::npos;
+        const bool has_b = seq.find('B') != std::string::npos;
+        if (!has_a || !has_b)
+            std::fprintf(stderr,
+                "Warning [lyapunov]: sequence \"%s\" does not contain both 'A' "
+                "and 'B'. The output will be spatially constant (flat colour). "
+                "Use a sequence such as \"AB\" or \"AABAB\".\n",
+                seq.c_str());
+
+        auto a = std::make_unique<LyapunovAlgorithm>();
+        a->sequence   = cfg.lyapunov_sequence;
+        a->warmup     = cfg.lyapunov_warmup;
+        a->iterations = cfg.lyapunov_iterations;
+        a->seed_x     = cfg.lyapunov_seed_x;
+        a->palette    = cfg.build_palette();
+        return a;
+    });
+
+    // ── Nova fractal ──────────────────────────────────────────────────────────
+
+    r("nova", [](const SceneConfig& cfg) -> std::unique_ptr<IAlgorithm> {
+        if (cfg.nova_power < 2)
+            std::fprintf(stderr,
+                "Warning [nova]: nova_power=%d is below 2. "
+                "The polynomial z^p - 1 has no useful root structure for p < 2. "
+                "Recommended: nova_power >= 2.\n",
+                cfg.nova_power);
+
+        // Julia mode with low iteration caps tends to produce near-black output
+        // because orbits need many steps to settle into a basin or escape.
+        if (cfg.nova_type == "julia" && cfg.nova_max_iterations < 128)
+            std::fprintf(stderr,
+                "Warning [nova]: nova_type=\"julia\" with nova_max_iterations=%d "
+                "is likely too low — most pixels will exhaust the iteration cap "
+                "without converging or escaping, producing a dark image. "
+                "Recommended: nova_max_iterations >= 256 for Julia mode.\n",
+                cfg.nova_max_iterations);
+
+        auto a = std::make_unique<NovaAlgorithm>();
+        a->power          = cfg.nova_power;
+        a->relaxation     = cfg.nova_relaxation;
+        a->julia_mode     = (cfg.nova_type == "julia");
+        a->seed_r         = cfg.nova_seed_r;
+        a->seed_i         = cfg.nova_seed_i;
+        a->max_iterations = cfg.nova_max_iterations;
+        a->tolerance      = cfg.nova_tolerance;
+        a->escape_radius  = cfg.nova_escape_radius;
+        a->saturation     = cfg.nova_saturation;
+        a->palette        = cfg.build_palette();
+        return a;
+    });
+
+    // ── Cyclic Cellular Automaton ─────────────────────────────────────────────
+
+    r("cyclic_ca", [](const SceneConfig& cfg) -> std::unique_ptr<IAlgorithm> {
+        auto a = std::make_unique<CyclicCAAlgorithm>();
+        a->states  = cfg.cca_states;
+        a->moore   = (cfg.cca_neighborhood != "vonneumann");
+        a->steps   = cfg.cca_steps;
+        a->seed    = cfg.cca_seed;
+        a->palette = cfg.build_palette();
+        return a;
+    });
+
+    // ── Physarum Polycephalum ─────────────────────────────────────────────────
+
+    r("physarum", [](const SceneConfig& cfg) -> std::unique_ptr<IAlgorithm> {
+        auto a = std::make_unique<PhysarumAlgorithm>();
+        a->num_agents     = cfg.physarum_num_agents;
+        a->steps          = cfg.physarum_steps;
+        a->sensor_angle   = cfg.physarum_sensor_angle;
+        a->sensor_dist    = cfg.physarum_sensor_dist;
+        a->rotation_angle = cfg.physarum_rotation_angle;
+        a->step_size      = cfg.physarum_step_size;
+        a->deposit        = cfg.physarum_deposit;
+        a->decay          = cfg.physarum_decay;
+        a->seed           = cfg.physarum_seed;
+        a->palette        = cfg.build_palette();
         return a;
     });
 

@@ -1,0 +1,4 @@
+{"algorithm":"attractor","output":"gallery/attr_2.png",
+ "viewport":{"real_min":-3.0,"real_max":3.0,"imag_min":-3.0,"imag_max":3.0,"width":1080,"height":1080},
+ "attractor_type":"clifford","attractor_a":-1.7,"attractor_b":1.8,"attractor_c":-1.9,"attractor_d":-0.4,
+ "attractor_iterations":8000000,"palette":"electric"}

@@ -1,0 +1,4 @@
+{"algorithm":"noise","output":"gallery/noise_5.png",
+ "viewport":{"real_min":0,"real_max":1,"imag_min":0,"imag_max":1,"width":1920,"height":1080},
+ "noise_octaves":7,"noise_persistence":0.55,"noise_lacunarity":2.0,"noise_scale":2.0,"noise_seed":1234,
+ "palette_type":"triadic","palette_hsl":[60.0,0.8,0.5]}

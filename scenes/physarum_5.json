@@ -1,0 +1,16 @@
+{
+    "algorithm": "physarum",
+    "output": "gallery/physarum_5.png",
+    "viewport": { "width": 1080, "height": 1080, "real_min": 0, "real_max": 1, "imag_min": 0, "imag_max": 1 },
+    "physarum_num_agents": 50000,
+    "physarum_steps": 800,
+    "physarum_sensor_angle": 45.0,
+    "physarum_sensor_dist": 9.0,
+    "physarum_rotation_angle": 45.0,
+    "physarum_step_size": 1.0,
+    "physarum_deposit": 5.0,
+    "physarum_decay": 0.97,
+    "physarum_seed": 1234,
+    "palette_type": "analogous",
+    "palette_hsl": [180.0, 0.75, 0.5]
+}

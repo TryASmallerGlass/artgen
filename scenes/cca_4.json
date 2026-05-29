@@ -1,0 +1,10 @@
+{
+    "algorithm": "cyclic_ca",
+    "output": "gallery/cca_4.png",
+    "viewport": { "width": 1080, "height": 1080, "real_min": 0, "real_max": 1, "imag_min": 0, "imag_max": 1 },
+    "cca_states": 20,
+    "cca_neighborhood": "vonneumann",
+    "cca_steps": 800,
+    "cca_seed": 314,
+    "palette": "electric"
+}

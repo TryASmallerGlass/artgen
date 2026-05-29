@@ -1,0 +1,4 @@
+{"algorithm":"attractor","output":"gallery/attr_4.png",
+ "viewport":{"real_min":-3.0,"real_max":3.0,"imag_min":-3.0,"imag_max":3.0,"width":1080,"height":1080},
+ "attractor_type":"dejong","attractor_a":1.4,"attractor_b":-2.3,"attractor_c":2.4,"attractor_d":-2.1,
+ "attractor_iterations":8000000,"palette":"ice"}

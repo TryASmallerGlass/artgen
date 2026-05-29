@@ -1,0 +1,10 @@
+{
+    "algorithm": "lyapunov",
+    "output": "gallery/lyapunov_5.png",
+    "viewport": { "real_min": 2.0, "real_max": 4.0, "imag_min": 2.0, "imag_max": 4.0, "width": 1920, "height": 1920 },
+    "lyapunov_sequence": "ABBAAB",
+    "lyapunov_warmup": 200,
+    "lyapunov_iterations": 2000,
+    "palette_type": "triadic",
+    "palette_hsl": [120.0, 0.75, 0.45]
+}

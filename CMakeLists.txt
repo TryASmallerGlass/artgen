@@ -83,6 +83,10 @@ add_library(artgen_core STATIC
     src/algorithms/Attractor.cpp
     src/algorithms/Plasma.cpp
     src/algorithms/Voronoi.cpp
+    src/algorithms/Lyapunov.cpp
+    src/algorithms/Nova.cpp
+    src/algorithms/CyclicCA.cpp
+    src/algorithms/Physarum.cpp
     src/output/PngWriter.cpp
     src/output/TiffWriter.cpp
     src/output/ExrWriter.cpp

@@ -1,0 +1,11 @@
+{
+    "algorithm": "cyclic_ca",
+    "output": "gallery/cca_2.png",
+    "viewport": { "width": 1080, "height": 1080, "real_min": 0, "real_max": 1, "imag_min": 0, "imag_max": 1 },
+    "cca_states": 16,
+    "cca_neighborhood": "vonneumann",
+    "cca_steps": 600,
+    "cca_seed": 99,
+    "palette_type": "complementary",
+    "palette_hsl": [0.0, 0.9, 0.5]
+}

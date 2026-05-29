@@ -112,6 +112,7 @@ SceneConfig SceneConfig::from_json(const std::string& path) {
     if (j.contains("attractor_b"))           cfg.attractor_b           = j["attractor_b"];
     if (j.contains("attractor_c"))           cfg.attractor_c           = j["attractor_c"];
     if (j.contains("attractor_d"))           cfg.attractor_d           = j["attractor_d"];
+    if (j.contains("attractor_u"))           cfg.attractor_u           = j["attractor_u"];
     if (j.contains("attractor_iterations"))  cfg.attractor_iterations  = j["attractor_iterations"];
 
     // Plasma
@@ -133,6 +134,40 @@ SceneConfig SceneConfig::from_json(const std::string& path) {
     if (j.contains("ls_angle"))      cfg.ls_angle     = j["ls_angle"];
     if (j.contains("ls_fg_color"))   cfg.ls_fg_color  = j["ls_fg_color"];
     if (j.contains("ls_bg_color"))   cfg.ls_bg_color  = j["ls_bg_color"];
+
+    // Lyapunov
+    if (j.contains("lyapunov_sequence"))   cfg.lyapunov_sequence   = j["lyapunov_sequence"];
+    if (j.contains("lyapunov_warmup"))     cfg.lyapunov_warmup     = j["lyapunov_warmup"];
+    if (j.contains("lyapunov_iterations")) cfg.lyapunov_iterations = j["lyapunov_iterations"];
+    if (j.contains("lyapunov_seed_x"))     cfg.lyapunov_seed_x     = j["lyapunov_seed_x"];
+
+    // Nova
+    if (j.contains("nova_power"))          cfg.nova_power          = j["nova_power"];
+    if (j.contains("nova_relaxation"))     cfg.nova_relaxation     = j["nova_relaxation"];
+    if (j.contains("nova_type"))           cfg.nova_type           = j["nova_type"];
+    if (j.contains("nova_seed_r"))         cfg.nova_seed_r         = j["nova_seed_r"];
+    if (j.contains("nova_seed_i"))         cfg.nova_seed_i         = j["nova_seed_i"];
+    if (j.contains("nova_max_iterations")) cfg.nova_max_iterations = j["nova_max_iterations"];
+    if (j.contains("nova_tolerance"))      cfg.nova_tolerance      = j["nova_tolerance"];
+    if (j.contains("nova_escape_radius"))  cfg.nova_escape_radius  = j["nova_escape_radius"];
+    if (j.contains("nova_saturation"))     cfg.nova_saturation     = j["nova_saturation"];
+
+    // Cyclic CA
+    if (j.contains("cca_neighborhood"))    cfg.cca_neighborhood    = j["cca_neighborhood"];
+    if (j.contains("cca_states"))          cfg.cca_states          = j["cca_states"];
+    if (j.contains("cca_steps"))           cfg.cca_steps           = j["cca_steps"];
+    if (j.contains("cca_seed"))            cfg.cca_seed            = static_cast<uint32_t>(int(j["cca_seed"]));
+
+    // Physarum
+    if (j.contains("physarum_num_agents"))     cfg.physarum_num_agents     = j["physarum_num_agents"];
+    if (j.contains("physarum_steps"))          cfg.physarum_steps          = j["physarum_steps"];
+    if (j.contains("physarum_sensor_angle"))   cfg.physarum_sensor_angle   = j["physarum_sensor_angle"];
+    if (j.contains("physarum_sensor_dist"))    cfg.physarum_sensor_dist    = j["physarum_sensor_dist"];
+    if (j.contains("physarum_rotation_angle")) cfg.physarum_rotation_angle = j["physarum_rotation_angle"];
+    if (j.contains("physarum_step_size"))      cfg.physarum_step_size      = j["physarum_step_size"];
+    if (j.contains("physarum_deposit"))        cfg.physarum_deposit        = j["physarum_deposit"];
+    if (j.contains("physarum_decay"))          cfg.physarum_decay          = j["physarum_decay"];
+    if (j.contains("physarum_seed"))           cfg.physarum_seed           = static_cast<uint32_t>(int(j["physarum_seed"]));
 
     // Post-processing
     if (j.contains("postprocess")) {

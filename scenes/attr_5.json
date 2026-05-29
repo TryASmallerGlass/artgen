@@ -1,0 +1,4 @@
+{"algorithm":"attractor","output":"gallery/attr_5.png",
+ "viewport":{"real_min":-3.0,"real_max":3.0,"imag_min":-3.0,"imag_max":3.0,"width":1080,"height":1080},
+ "attractor_type":"dejong","attractor_a":-2.0,"attractor_b":-2.0,"attractor_c":-1.2,"attractor_d":2.0,
+ "attractor_iterations":8000000,"palette_type":"triadic","palette_hsl":[45.0,0.9,0.5]}

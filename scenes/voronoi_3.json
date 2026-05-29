@@ -1,0 +1,3 @@
+{"algorithm":"voronoi","output":"gallery/voronoi_3.png",
+ "viewport":{"real_min":0,"real_max":1,"imag_min":0,"imag_max":1,"width":1080,"height":1080},
+ "voronoi_seeds":64,"voronoi_mode":"edge","voronoi_metric":"euclidean","voronoi_seed":777,"palette":"electric"}

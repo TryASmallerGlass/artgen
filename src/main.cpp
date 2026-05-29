@@ -122,6 +122,97 @@ static void list_presets() {
 
 // ── Render one frame ──────────────────────────────────────────────────────────
 
+// ── Post-render quality check ─────────────────────────────────────────────────
+//
+// Samples 1 in 16 pixels (stride 4 in each dimension) and computes mean luminance + variance.
+// Prints an actionable warning if the output is near-black or completely uniform
+// (both indicate a likely parameter misconfiguration rather than an artistic choice).
+
+static void check_render_quality(const artgen::PixelBuffer& buf,
+                                  const std::string& algo_name)
+{
+    const int W = buf.width(), H = buf.height();
+    const int stride = 4; // sample every 4th pixel in each dimension
+
+    double sum_lum  = 0.0;
+    double sum_lsq  = 0.0;
+    int    n        = 0;
+    float  max_lum  = 0.0f;
+
+    for (int y = 0; y < H; y += stride) {
+        for (int x = 0; x < W; x += stride) {
+            artgen::RGBA c = buf.get(x, y);
+            // Rec.709 luminance
+            float lum = 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
+            sum_lum += lum;
+            sum_lsq += lum * lum;
+            if (lum > max_lum) max_lum = lum;
+            ++n;
+        }
+    }
+
+    if (n == 0) return;
+
+    const double mean_lum = sum_lum / n;
+    const double variance  = (sum_lsq / n) - (mean_lum * mean_lum);
+
+    // Thresholds (tuned empirically):
+    //   mean < 0.02  → almost all pixels are near-black
+    //   max  < 0.05  → no bright pixels at all (density histograms with empty fields)
+    //   variance < 5e-5 → image is effectively one flat colour
+    const bool near_black = (mean_lum < 0.02 && max_lum < 0.05);
+    const bool flat_colour = (variance < 5e-5 && mean_lum > 0.02);
+
+    if (!near_black && !flat_colour) return;
+
+    std::fprintf(stderr, "\n");
+    std::fprintf(stderr, "  *** Quality warning [%s] ***\n", algo_name.c_str());
+
+    if (near_black) {
+        std::fprintf(stderr,
+            "  Output is near-black (mean luminance %.4f, max %.4f).\n"
+            "  The parameter combination produced no visible structure.\n",
+            mean_lum, max_lum);
+
+        // Algorithm-specific hints
+        if (algo_name == "ikeda") {
+            std::fprintf(stderr,
+                "  Hint: attractor_u < 0.75 produces periodic orbits, not a chaotic\n"
+                "  attractor. Set attractor_u in [0.75, 0.90] for visible ribbons.\n");
+        } else if (algo_name == "lyapunov") {
+            std::fprintf(stderr,
+                "  Hint: the viewport must stay within (2, 4) x (2, 4) for the\n"
+                "  logistic map to remain bounded. Values outside this range cause\n"
+                "  divergence. Also check that the sequence contains both 'A' and 'B'.\n");
+        } else if (algo_name == "attractor") {
+            std::fprintf(stderr,
+                "  Hint: the orbit may fall entirely outside the viewport.\n"
+                "  Widen the viewport or adjust a/b/c/d so the attractor centre\n"
+                "  falls within [real_min, real_max] x [imag_min, imag_max].\n");
+        } else if (algo_name == "nova") {
+            std::fprintf(stderr,
+                "  Hint: try reducing nova_escape_radius or increasing\n"
+                "  nova_max_iterations, or widen the viewport to cover the\n"
+                "  region where roots are located.\n");
+        } else {
+            std::fprintf(stderr,
+                "  Hint: review parameter ranges — consult docs/algorithms.md for\n"
+                "  valid input bounds for '%s'.\n", algo_name.c_str());
+        }
+    }
+
+    if (flat_colour) {
+        std::fprintf(stderr,
+            "  Output is a flat uniform colour (variance %.2e, mean %.4f).\n"
+            "  The algorithm produced no spatial variation — check parameter ranges.\n",
+            variance, mean_lum);
+    }
+
+    std::fprintf(stderr, "\n");
+}
+
+// ── Render one frame ──────────────────────────────────────────────────────────
+
 static artgen::PixelBuffer render_frame(const artgen::SceneConfig& cfg,
                                          const std::string& output_path,
                                          bool do_save = true) {
@@ -144,6 +235,8 @@ static artgen::PixelBuffer render_frame(const artgen::SceneConfig& cfg,
     std::printf("  Render: %.2fs\n", elapsed);
 
     artgen::PostProcessor::apply(buf, cfg.postprocess);
+
+    check_render_quality(buf, cfg.algorithm_name);
 
     if (do_save) save(buf, output_path, cfg.output_dpi);
     return buf;

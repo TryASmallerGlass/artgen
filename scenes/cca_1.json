@@ -1,0 +1,11 @@
+{
+    "algorithm": "cyclic_ca",
+    "output": "gallery/cca_1.png",
+    "viewport": { "width": 1080, "height": 1080, "real_min": 0, "real_max": 1, "imag_min": 0, "imag_max": 1 },
+    "cca_states": 12,
+    "cca_neighborhood": "moore",
+    "cca_steps": 500,
+    "cca_seed": 42,
+    "palette_type": "triadic",
+    "palette_hsl": [200.0, 0.85, 0.5]
+}
