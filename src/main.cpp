@@ -177,8 +177,8 @@ static void check_render_quality(const artgen::PixelBuffer& buf,
         // Algorithm-specific hints
         if (algo_name == "ikeda") {
             std::fprintf(stderr,
-                "  Hint: attractor_u < 0.7 produces periodic orbits, not a chaotic\n"
-                "  attractor. Set attractor_u in [0.75, 0.95] for visible ribbons.\n");
+                "  Hint: attractor_u < 0.75 produces periodic orbits, not a chaotic\n"
+                "  attractor. Set attractor_u in [0.75, 0.90] for visible ribbons.\n");
         } else if (algo_name == "lyapunov") {
             std::fprintf(stderr,
                 "  Hint: the viewport must stay within (2, 4) x (2, 4) for the\n"
