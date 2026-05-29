@@ -124,7 +124,7 @@ static void list_presets() {
 
 // ── Post-render quality check ─────────────────────────────────────────────────
 //
-// Samples every 16th pixel and computes mean luminance + variance.
+// Samples 1 in 16 pixels (stride 4 in each dimension) and computes mean luminance + variance.
 // Prints an actionable warning if the output is near-black or completely uniform
 // (both indicate a likely parameter misconfiguration rather than an artistic choice).
 
