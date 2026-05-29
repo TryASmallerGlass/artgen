@@ -186,12 +186,12 @@ static void register_builtins() {
         //   u < 0.7  → the map settles onto a periodic orbit, not a strange
         //               attractor.  The density histogram will be near-black.
         //   u > 0.98 → valid but the attractor becomes very diffuse.
-        if (cfg.attractor_u < 0.7)
+        if (cfg.attractor_u < 0.75)
             std::fprintf(stderr,
-                "Warning [ikeda]: attractor_u=%.3f is below 0.7. "
+                "Warning [ikeda]: attractor_u=%.3f is below 0.75. "
                 "The Ikeda map will produce a periodic orbit rather than a "
                 "chaotic strange attractor — the output will be near-black. "
-                "Recommended range: 0.75 – 0.95.\n",
+                "Recommended range: 0.75 – 0.90.\n",
                 cfg.attractor_u);
         else if (cfg.attractor_u > 0.90)
             std::fprintf(stderr,
