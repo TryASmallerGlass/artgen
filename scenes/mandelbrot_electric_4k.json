@@ -10,8 +10,6 @@
         "height": 2160
     },
     "max_iterations": 1500,
-    "escape_radius": 2.0,
-    "smooth_coloring": true,
     "color_cycle": 96.0,
     "palette": "electric"
 }

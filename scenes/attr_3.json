@@ -1,4 +1,4 @@
 {"algorithm":"attractor","output":"gallery/attr_3.png",
  "viewport":{"real_min":-3.0,"real_max":3.0,"imag_min":-3.0,"imag_max":3.0,"width":1080,"height":1080},
  "attractor_type":"clifford","attractor_a":1.5,"attractor_b":-1.8,"attractor_c":1.6,"attractor_d":0.9,
- "attractor_iterations":8000000,"palette_type":"complementary","palette_hsl":[200.0,0.85,0.5]}
+ "palette_type":"complementary","palette_hsl":[200.0,0.85,0.5]}

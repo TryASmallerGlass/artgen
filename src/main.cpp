@@ -13,6 +13,9 @@
 #include <chrono>
 #include <cstdio>
 #include <cstring>
+#include <ctime>
+#include <filesystem>
+#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -211,6 +214,45 @@ static void check_render_quality(const artgen::PixelBuffer& buf,
     std::fprintf(stderr, "\n");
 }
 
+// ── Output naming ─────────────────────────────────────────────────────────────
+
+static std::string make_output_stem(const std::string& algo_name) {
+    std::string prefix = algo_name.substr(0, std::min<size_t>(algo_name.size(), 7));
+
+    std::time_t t = std::time(nullptr);
+    std::tm tm_buf{};
+#ifdef _WIN32
+    localtime_s(&tm_buf, &t);
+#else
+    localtime_r(&t, &tm_buf);
+#endif
+    char ts[16];
+    std::strftime(ts, sizeof(ts), "%Y%m%d_%H%M", &tm_buf);
+
+    std::filesystem::create_directories("ImageSettings");
+    const std::string counter_file = "ImageSettings/.counter";
+    int counter = 1;
+    { std::ifstream cf(counter_file); if (cf) cf >> counter; }
+    { std::ofstream cf(counter_file); cf << (counter + 1); }
+
+    char stem[128];
+    std::snprintf(stem, sizeof(stem), "%s_%s_%05d", prefix.c_str(), ts, counter);
+    return stem;
+}
+
+static void save_settings_json(const std::string& config_path, const std::string& stem) {
+    std::filesystem::create_directories("ImageSettings");
+    std::string dest = "ImageSettings/" + stem + ".json";
+    std::error_code ec;
+    std::filesystem::copy_file(config_path, dest,
+        std::filesystem::copy_options::overwrite_existing, ec);
+    if (ec)
+        std::fprintf(stderr, "Warning: could not copy settings to %s: %s\n",
+                     dest.c_str(), ec.message().c_str());
+    else
+        std::printf("  Config : %s\n", dest.c_str());
+}
+
 // ── Render one frame ──────────────────────────────────────────────────────────
 
 static artgen::PixelBuffer render_frame(const artgen::SceneConfig& cfg,
@@ -284,6 +326,22 @@ int main(int argc, char* argv[]) {
                 std::fprintf(stderr, "Warning: --set unknown key '%s'\n", key.c_str());
             else if (result == ApplySetResult::InvalidValue)
                 std::fprintf(stderr, "Warning: --set invalid value '%s' for key '%s'\n", val.c_str(), key.c_str());
+        }
+
+        // Derive output directory and extension from the config's output_path,
+        // then replace the filename with an auto-generated stem.
+        {
+            std::string orig = base.output_path;
+            std::string dir, ext = ".png";
+            auto slash = orig.find_last_of("/\\");
+            if (slash != std::string::npos) dir = orig.substr(0, slash + 1);
+            auto dot = orig.rfind('.');
+            if (dot != std::string::npos && (slash == std::string::npos || dot > slash))
+                ext = orig.substr(dot);
+
+            std::string stem = make_output_stem(base.algorithm_name);
+            base.output_path = dir + stem + ext;
+            save_settings_json(config_path, stem);
         }
 
         std::printf("Config : %s\n", config_path.c_str());

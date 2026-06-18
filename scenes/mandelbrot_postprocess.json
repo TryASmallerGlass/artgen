@@ -4,7 +4,6 @@
   "max_iterations": 500,
   "palette": "electric",
   "output": "output/mandelbrot_postprocess.png",
-  "threads": 0,
   "aa": 2,
   "postprocess": {
     "gamma": 1.8,

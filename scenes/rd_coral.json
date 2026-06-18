@@ -8,9 +8,6 @@
         "height": 1024
     },
     "rd_preset": "coral",
-    "rd_steps": 8000,
     "rd_seed": 42,
-    "palette": "ice",
-    "threads": 0,
-    "tile_size": 64
+    "palette": "ice"
 }

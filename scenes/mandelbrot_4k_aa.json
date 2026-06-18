@@ -13,8 +13,5 @@
     "max_iterations": 1500,
     "color_cycle": 80.0,
     "palette": "classic_mandelbrot",
-    "threads": 0,
-    "tile_size": 64,
-    "aa": 2,
-    "dpi": 300
+    "aa": 2
 }

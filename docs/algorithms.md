@@ -5,6 +5,12 @@ section below lists the relevant config keys; see
 [config-reference.md](config-reference.md) for complete documentation of every
 field.
 
+> **Shared defaults:** many common values (`smooth_coloring`, `escape_radius`,
+> `newton_tolerance`, `rd_steps`, `attractor_iterations`, `nova_relaxation`,
+> `nova_max_iterations`, `physarum_num_agents`, `physarum_step_size`, etc.) are
+> pre-set in [`scenes/defaults.json`](../scenes/defaults.json) and do not need to
+> appear in individual scene files unless you want to override them.
+
 ---
 
 ## Table of Contents
@@ -51,10 +57,7 @@ their iteration count.
 {
   "algorithm": "mandelbrot",
   "max_iterations": 1000,
-  "escape_radius": 2.0,
-  "smooth_coloring": true,
-  "color_cycle": 64.0,
-  "coloring_mode": "smooth"
+  "color_cycle": 64.0
 }
 ```
 
@@ -201,10 +204,6 @@ smooth escape time via the palette.
   "algorithm": "nova",
   "nova_type": "mandelbrot",
   "nova_power": 3,
-  "nova_relaxation": 1.0,
-  "nova_max_iterations": 256,
-  "nova_tolerance": 1e-6,
-  "nova_escape_radius": 1e6,
   "nova_saturation": 0.8,
   "palette": "fire"
 }
@@ -214,9 +213,11 @@ smooth escape time via the palette.
 |---|---|---|
 | `nova_type` | `"mandelbrot"` | `"mandelbrot"` (z₀=1, c=pixel) or `"julia"` (z₀=pixel, c=seed) |
 | `nova_power` | 3 | Polynomial degree; higher = more roots, more intricate basins |
-| `nova_relaxation` | 1.0 | Step-size multiplier R; values ≠ 1 create extra boundary detail |
+| `nova_relaxation` | 1.0 | Step-size multiplier R; values ≠ 1 create extra boundary detail. (default in `defaults.json`) |
 | `nova_seed_r`, `nova_seed_i` | 1.0, 0.0 | Fixed c for Julia-type mode |
-| `nova_max_iterations` | 256 | Per-pixel iteration cap |
+| `nova_max_iterations` | 256 | Per-pixel iteration cap. (default in `defaults.json`) |
+| `nova_tolerance` | 1e-6 | Convergence tolerance. (default in `defaults.json`) |
+| `nova_escape_radius` | 1e6 | Escape threshold. (default in `defaults.json`) |
 | `nova_saturation` | 0.8 | HSV saturation for converged basin colouring |
 
 Tileable — each pixel is independent.
@@ -300,10 +301,11 @@ log-normalised density is mapped through the palette.
   "attractor_b":  1.6,
   "attractor_c":  1.0,
   "attractor_d":  0.7,
-  "attractor_iterations": 5000000,
   "palette": "fire"
 }
 ```
+
+`attractor_iterations` defaults to 8 000 000 (set in `defaults.json`); override here only if you need a different count.
 
 | `attractor_type` | Equations |
 |---|---|
@@ -326,10 +328,11 @@ sharp, geometrically folded ribbons — phase-space stretching and folding made 
 {
   "algorithm": "ikeda",
   "attractor_u": 0.9,
-  "attractor_iterations": 8000000,
   "palette": "fire"
 }
 ```
+
+`attractor_iterations` defaults to 8 000 000 (set in `defaults.json`).
 
 `attractor_u` (default 0.9) is the nonlinearity parameter.
 
@@ -393,10 +396,11 @@ of _V_ is mapped through the palette.
 {
   "algorithm": "reaction_diffusion",
   "rd_preset": "coral",
-  "rd_steps": 8000,
   "rd_seed": 42
 }
 ```
+
+`rd_steps` defaults to 8000 (set in `defaults.json`).
 
 **Named presets**
 
@@ -541,13 +545,12 @@ fall at the dark end of the palette.
 {
   "algorithm": "lyapunov",
   "lyapunov_sequence": "AABAB",
-  "lyapunov_warmup": 200,
-  "lyapunov_iterations": 1000,
-  "lyapunov_seed_x": 0.5,
   "viewport": { "real_min": 2.0, "real_max": 4.0, "imag_min": 2.0, "imag_max": 4.0 },
   "palette": "ice"
 }
 ```
+
+`lyapunov_warmup` (200) and `lyapunov_iterations` (1000) are set in `defaults.json`.
 
 | Parameter | Default | Notes |
 |---|---|---|
@@ -584,18 +587,16 @@ networks resemble biological vascular and mycelium structures.
 ```json
 {
   "algorithm": "physarum",
-  "physarum_num_agents": 200000,
   "physarum_steps": 400,
   "physarum_sensor_angle": 45.0,
   "physarum_sensor_dist": 9.0,
   "physarum_rotation_angle": 45.0,
-  "physarum_step_size": 1.0,
-  "physarum_deposit": 5.0,
-  "physarum_decay": 0.95,
   "physarum_seed": 42,
   "palette": "electric"
 }
 ```
+
+`physarum_num_agents` (200 000), `physarum_step_size` (1.0), `physarum_deposit` (5.0), and `physarum_decay` (0.95) are set in `defaults.json`.
 
 | Parameter | Default | Effect |
 |---|---|---|

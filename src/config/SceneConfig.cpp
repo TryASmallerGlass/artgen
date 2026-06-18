@@ -38,14 +38,7 @@ static Palette resolve_named(const std::string& name) {
 
 // ── Config loading ─────────────────────────────────────────────────────────────
 
-SceneConfig SceneConfig::from_json(const std::string& path) {
-    std::ifstream f(path);
-    if (!f.is_open())
-        throw std::runtime_error("Cannot open config: " + path);
-
-    nlohmann::json j = nlohmann::json::parse(f);
-    SceneConfig cfg;
-
+static void apply_json(SceneConfig& cfg, const nlohmann::json& j) {
     if (j.contains("viewport")) {
         auto& vp = j["viewport"];
         if (vp.contains("real_min"))  cfg.viewport.real_min     = vp["real_min"];
@@ -77,6 +70,7 @@ SceneConfig SceneConfig::from_json(const std::string& path) {
 
     if (j.contains("palette_stops")) {
         cfg.palette_type = "custom";
+        cfg.palette_custom_stops.clear();
         for (const auto& s : j["palette_stops"])
             cfg.palette_custom_stops.push_back({s["pos"], std::string(s["color"])});
     }
@@ -103,10 +97,8 @@ SceneConfig SceneConfig::from_json(const std::string& path) {
     if (j.contains("rd_seed"))    cfg.rd_seed   = static_cast<uint32_t>(int(j["rd_seed"]));
     if (j.contains("rd_preset"))  cfg.rd_preset = j["rd_preset"];
 
-    // Multibrot
     if (j.contains("multibrot_power"))       cfg.multibrot_power       = j["multibrot_power"];
 
-    // Strange attractor
     if (j.contains("attractor_type"))        cfg.attractor_type        = j["attractor_type"];
     if (j.contains("attractor_a"))           cfg.attractor_a           = j["attractor_a"];
     if (j.contains("attractor_b"))           cfg.attractor_b           = j["attractor_b"];
@@ -115,33 +107,28 @@ SceneConfig SceneConfig::from_json(const std::string& path) {
     if (j.contains("attractor_u"))           cfg.attractor_u           = j["attractor_u"];
     if (j.contains("attractor_iterations"))  cfg.attractor_iterations  = j["attractor_iterations"];
 
-    // Plasma
     if (j.contains("plasma_roughness"))      cfg.plasma_roughness      = j["plasma_roughness"];
     if (j.contains("plasma_seed"))           cfg.plasma_seed           = static_cast<uint32_t>(int(j["plasma_seed"]));
     if (j.contains("plasma_octaves"))        cfg.plasma_octaves        = j["plasma_octaves"];
 
-    // Voronoi
     if (j.contains("voronoi_seeds"))         cfg.voronoi_num_seeds     = j["voronoi_seeds"];
     if (j.contains("voronoi_seed"))          cfg.voronoi_seed          = static_cast<uint32_t>(int(j["voronoi_seed"]));
     if (j.contains("voronoi_mode"))          cfg.voronoi_mode          = j["voronoi_mode"];
     if (j.contains("voronoi_metric"))        cfg.voronoi_metric        = j["voronoi_metric"];
 
-    // L-System
-    if (j.contains("ls_preset"))     cfg.ls_preset    = j["ls_preset"];
-    if (j.contains("ls_axiom"))      cfg.ls_axiom     = j["ls_axiom"];
-    if (j.contains("ls_rules"))      cfg.ls_rules     = j["ls_rules"];
+    if (j.contains("ls_preset"))     cfg.ls_preset     = j["ls_preset"];
+    if (j.contains("ls_axiom"))      cfg.ls_axiom      = j["ls_axiom"];
+    if (j.contains("ls_rules"))      cfg.ls_rules      = j["ls_rules"];
     if (j.contains("ls_iterations")) cfg.ls_iterations = j["ls_iterations"];
-    if (j.contains("ls_angle"))      cfg.ls_angle     = j["ls_angle"];
-    if (j.contains("ls_fg_color"))   cfg.ls_fg_color  = j["ls_fg_color"];
-    if (j.contains("ls_bg_color"))   cfg.ls_bg_color  = j["ls_bg_color"];
+    if (j.contains("ls_angle"))      cfg.ls_angle      = j["ls_angle"];
+    if (j.contains("ls_fg_color"))   cfg.ls_fg_color   = j["ls_fg_color"];
+    if (j.contains("ls_bg_color"))   cfg.ls_bg_color   = j["ls_bg_color"];
 
-    // Lyapunov
     if (j.contains("lyapunov_sequence"))   cfg.lyapunov_sequence   = j["lyapunov_sequence"];
     if (j.contains("lyapunov_warmup"))     cfg.lyapunov_warmup     = j["lyapunov_warmup"];
     if (j.contains("lyapunov_iterations")) cfg.lyapunov_iterations = j["lyapunov_iterations"];
     if (j.contains("lyapunov_seed_x"))     cfg.lyapunov_seed_x     = j["lyapunov_seed_x"];
 
-    // Nova
     if (j.contains("nova_power"))          cfg.nova_power          = j["nova_power"];
     if (j.contains("nova_relaxation"))     cfg.nova_relaxation     = j["nova_relaxation"];
     if (j.contains("nova_type"))           cfg.nova_type           = j["nova_type"];
@@ -152,13 +139,11 @@ SceneConfig SceneConfig::from_json(const std::string& path) {
     if (j.contains("nova_escape_radius"))  cfg.nova_escape_radius  = j["nova_escape_radius"];
     if (j.contains("nova_saturation"))     cfg.nova_saturation     = j["nova_saturation"];
 
-    // Cyclic CA
     if (j.contains("cca_neighborhood"))    cfg.cca_neighborhood    = j["cca_neighborhood"];
     if (j.contains("cca_states"))          cfg.cca_states          = j["cca_states"];
     if (j.contains("cca_steps"))           cfg.cca_steps           = j["cca_steps"];
     if (j.contains("cca_seed"))            cfg.cca_seed            = static_cast<uint32_t>(int(j["cca_seed"]));
 
-    // Physarum
     if (j.contains("physarum_num_agents"))     cfg.physarum_num_agents     = j["physarum_num_agents"];
     if (j.contains("physarum_steps"))          cfg.physarum_steps          = j["physarum_steps"];
     if (j.contains("physarum_sensor_angle"))   cfg.physarum_sensor_angle   = j["physarum_sensor_angle"];
@@ -169,7 +154,6 @@ SceneConfig SceneConfig::from_json(const std::string& path) {
     if (j.contains("physarum_decay"))          cfg.physarum_decay          = j["physarum_decay"];
     if (j.contains("physarum_seed"))           cfg.physarum_seed           = static_cast<uint32_t>(int(j["physarum_seed"]));
 
-    // Post-processing
     if (j.contains("postprocess")) {
         auto& pp = j["postprocess"];
         if (pp.contains("gamma"))      cfg.postprocess.gamma      = pp["gamma"];
@@ -179,7 +163,6 @@ SceneConfig SceneConfig::from_json(const std::string& path) {
         if (pp.contains("vignette"))   cfg.postprocess.vignette   = pp["vignette"];
     }
 
-    // Palette phase
     if (j.contains("palette_phase"))   cfg.palette_phase    = j["palette_phase"];
     if (j.contains("aco_palette"))     cfg.aco_palette_path = j["aco_palette"];
 
@@ -187,6 +170,27 @@ SceneConfig SceneConfig::from_json(const std::string& path) {
     if (j.contains("tile_size"))  cfg.tile_size    = j["tile_size"];
     if (j.contains("aa"))         cfg.aa_samples   = j["aa"];
     if (j.contains("dpi"))        cfg.output_dpi   = j["dpi"];
+}
+
+SceneConfig SceneConfig::from_json(const std::string& path) {
+    // Auto-load defaults.json from the same directory, if present.
+    SceneConfig cfg;
+    std::string dir;
+    auto slash = path.find_last_of("/\\");
+    if (slash != std::string::npos) dir = path.substr(0, slash + 1);
+    std::string defaults_path = dir + "defaults.json";
+    {
+        std::ifstream df(defaults_path);
+        if (df.is_open()) {
+            apply_json(cfg, nlohmann::json::parse(df));
+            std::printf("  Defaults: %s\n", defaults_path.c_str());
+        }
+    }
+
+    std::ifstream f(path);
+    if (!f.is_open())
+        throw std::runtime_error("Cannot open config: " + path);
+    apply_json(cfg, nlohmann::json::parse(f));
 
     return cfg;
 }

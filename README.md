@@ -8,14 +8,15 @@ A C++20 command-line renderer for generative and fractal art, designed for wall 
 
 ## Features
 
-**12 algorithms** across four families:
+**17 algorithms** across five families:
 
 | Family | Algorithms |
 |---|---|
-| Escape-time | Mandelbrot, Julia Set, Burning Ship, Newton Fractal, Multibrot (`z^n+c`), Tricorn |
+| Escape-time | Mandelbrot, Julia Set, Burning Ship, Newton Fractal, Nova Fractal, Multibrot (`z^n+c`), Tricorn |
 | Generative texture | Simplex Noise FBM, Reaction-Diffusion (Gray-Scott), Plasma (Diamond-Square) |
-| Structural | L-Systems (5 presets + custom rules), Strange Attractor (Clifford / De Jong) |
-| Geometric | Voronoi / Worley (3 modes, 3 distance metrics) |
+| Structural | L-Systems (5 presets + custom rules), Strange Attractor (Clifford / De Jong), Ikeda Map |
+| Spatial / agent | Voronoi / Worley (3 modes, 3 metrics), Cyclic Cellular Automaton, Physarum (slime mould) |
+| Analytical | Lyapunov Fractal |
 
 **Rendering**
 - Multithreaded tile renderer — configurable thread count, tile size, AA supersampling (1×–16×)
@@ -32,6 +33,8 @@ A C++20 command-line renderer for generative and fractal art, designed for wall 
 **Output**
 - 8-bit PNG and 16-bit TIFF with DPI metadata
 - 32-bit float EXR (full HDR; optional fp16 mode)
+- Auto-named output files: `[algo7]_YYYYMMDD_HHMM_NNNNN.ext` — no manual naming needed
+- Scene JSON copied to `ImageSettings/[same stem].json` alongside every render
 - `--sweep` — parameter sweep over any scene key → numbered frame sequence
 - `--animate` — palette phase cycling shorthand
 - `--preview` — SDL2 interactive window (pan, zoom, live re-render)
@@ -97,6 +100,7 @@ cmake --build build --config Release
 | `"julia"` | Julia Set | Fixed seed `(julia_cr, julia_ci)` |
 | `"burning_ship"` | Burning Ship | `(\|Re z\|+i\|Im z\|)²+c` |
 | `"newton"` | Newton Fractal | Root-finds zⁿ−1; hue = basin, brightness = speed |
+| `"nova"` | Nova Fractal | Relaxed Newton + c injection; escape-time + basin hybrid |
 | `"multibrot"` | Multibrot | `z^n+c` for arbitrary float `multibrot_power` (default 3) |
 | `"tricorn"` | Tricorn / Mandelbar | `conj(z)²+c`; 3-lobed with spiky tips |
 | `"noise"` | Simplex Noise FBM | Fractal Brownian Motion, 2D simplex basis |
@@ -104,13 +108,19 @@ cmake --build build --config Release
 | `"plasma"` | Plasma | Diamond-Square midpoint displacement |
 | `"lsystem"` | L-System | String rewriting + turtle graphics; 5 presets |
 | `"attractor"` | Strange Attractor | Clifford/De Jong orbit density histogram |
+| `"ikeda"` | Ikeda Map | Nonlinear optical-cavity attractor; folded ribbons |
 | `"voronoi"` | Voronoi | Nearest-seed coloring; 3 modes, 3 metrics |
+| `"cyclic_ca"` | Cyclic CA | Excitable-medium cellular automaton; spiral waves |
+| `"lyapunov"` | Lyapunov Fractal | Stability map of a parametrically driven logistic map |
+| `"physarum"` | Physarum | Agent-based slime-mould trail network simulation |
 
 ---
 
 ## Scene config reference
 
 All fields are optional — only include what you want to override.
+
+If `scenes/defaults.json` exists in the same directory as a scene file, it is loaded first and the scene file overlays it.  Common values (`smooth_coloring`, `escape_radius`, `rd_steps`, `newton_tolerance`, etc.) live in `defaults.json` so individual scene files only need to specify what differs.  See [`scenes/defaults.json`](scenes/defaults.json) for the full list.
 
 ```jsonc
 {
@@ -378,7 +388,10 @@ artgen/
 │   ├── config/                 # JSON parsing
 │   └── output/                 # stb PNG, TIFF, tinyexr EXR
 ├── tests/                      # Catch2 unit tests (119 cases)
-└── scenes/                     # example JSON scene configs
+├── scenes/
+│   ├── defaults.json           # shared defaults auto-loaded before every scene
+│   └── *.json                  # per-algorithm scene configs
+└── ImageSettings/              # per-render JSON copies (auto-created at runtime)
 ```
 
 ---
