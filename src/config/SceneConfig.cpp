@@ -1,12 +1,7 @@
 #include "artgen/config/SceneConfig.h"
+#include "artgen/AlgorithmRegistry.h"
+#include "artgen/AcoImport.h"
 #include "artgen/IAlgorithm.h"
-#include "artgen/algorithms/Mandelbrot.h"
-#include "artgen/algorithms/Julia.h"
-#include "artgen/algorithms/BurningShip.h"
-#include "artgen/algorithms/Newton.h"
-#include "artgen/algorithms/NoiseField.h"
-#include "artgen/algorithms/ReactionDiffusion.h"
-#include "artgen/algorithms/LSystem.h"
 #include "artgen/PaletteGenerator.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
@@ -43,14 +38,7 @@ static Palette resolve_named(const std::string& name) {
 
 // ── Config loading ─────────────────────────────────────────────────────────────
 
-SceneConfig SceneConfig::from_json(const std::string& path) {
-    std::ifstream f(path);
-    if (!f.is_open())
-        throw std::runtime_error("Cannot open config: " + path);
-
-    nlohmann::json j = nlohmann::json::parse(f);
-    SceneConfig cfg;
-
+static void apply_json(SceneConfig& cfg, const nlohmann::json& j) {
     if (j.contains("viewport")) {
         auto& vp = j["viewport"];
         if (vp.contains("real_min"))  cfg.viewport.real_min     = vp["real_min"];
@@ -82,6 +70,7 @@ SceneConfig SceneConfig::from_json(const std::string& path) {
 
     if (j.contains("palette_stops")) {
         cfg.palette_type = "custom";
+        cfg.palette_custom_stops.clear();
         for (const auto& s : j["palette_stops"])
             cfg.palette_custom_stops.push_back({s["pos"], std::string(s["color"])});
     }
@@ -108,16 +97,63 @@ SceneConfig SceneConfig::from_json(const std::string& path) {
     if (j.contains("rd_seed"))    cfg.rd_seed   = static_cast<uint32_t>(int(j["rd_seed"]));
     if (j.contains("rd_preset"))  cfg.rd_preset = j["rd_preset"];
 
-    // L-System
-    if (j.contains("ls_preset"))     cfg.ls_preset    = j["ls_preset"];
-    if (j.contains("ls_axiom"))      cfg.ls_axiom     = j["ls_axiom"];
-    if (j.contains("ls_rules"))      cfg.ls_rules     = j["ls_rules"];
-    if (j.contains("ls_iterations")) cfg.ls_iterations = j["ls_iterations"];
-    if (j.contains("ls_angle"))      cfg.ls_angle     = j["ls_angle"];
-    if (j.contains("ls_fg_color"))   cfg.ls_fg_color  = j["ls_fg_color"];
-    if (j.contains("ls_bg_color"))   cfg.ls_bg_color  = j["ls_bg_color"];
+    if (j.contains("multibrot_power"))       cfg.multibrot_power       = j["multibrot_power"];
 
-    // Post-processing
+    if (j.contains("attractor_type"))        cfg.attractor_type        = j["attractor_type"];
+    if (j.contains("attractor_a"))           cfg.attractor_a           = j["attractor_a"];
+    if (j.contains("attractor_b"))           cfg.attractor_b           = j["attractor_b"];
+    if (j.contains("attractor_c"))           cfg.attractor_c           = j["attractor_c"];
+    if (j.contains("attractor_d"))           cfg.attractor_d           = j["attractor_d"];
+    if (j.contains("attractor_u"))           cfg.attractor_u           = j["attractor_u"];
+    if (j.contains("attractor_iterations"))  cfg.attractor_iterations  = j["attractor_iterations"];
+
+    if (j.contains("plasma_roughness"))      cfg.plasma_roughness      = j["plasma_roughness"];
+    if (j.contains("plasma_seed"))           cfg.plasma_seed           = static_cast<uint32_t>(int(j["plasma_seed"]));
+    if (j.contains("plasma_octaves"))        cfg.plasma_octaves        = j["plasma_octaves"];
+
+    if (j.contains("voronoi_seeds"))         cfg.voronoi_num_seeds     = j["voronoi_seeds"];
+    if (j.contains("voronoi_seed"))          cfg.voronoi_seed          = static_cast<uint32_t>(int(j["voronoi_seed"]));
+    if (j.contains("voronoi_mode"))          cfg.voronoi_mode          = j["voronoi_mode"];
+    if (j.contains("voronoi_metric"))        cfg.voronoi_metric        = j["voronoi_metric"];
+
+    if (j.contains("ls_preset"))     cfg.ls_preset     = j["ls_preset"];
+    if (j.contains("ls_axiom"))      cfg.ls_axiom      = j["ls_axiom"];
+    if (j.contains("ls_rules"))      cfg.ls_rules      = j["ls_rules"];
+    if (j.contains("ls_iterations")) cfg.ls_iterations = j["ls_iterations"];
+    if (j.contains("ls_angle"))      cfg.ls_angle      = j["ls_angle"];
+    if (j.contains("ls_fg_color"))   cfg.ls_fg_color   = j["ls_fg_color"];
+    if (j.contains("ls_bg_color"))   cfg.ls_bg_color   = j["ls_bg_color"];
+
+    if (j.contains("lyapunov_sequence"))   cfg.lyapunov_sequence   = j["lyapunov_sequence"];
+    if (j.contains("lyapunov_warmup"))     cfg.lyapunov_warmup     = j["lyapunov_warmup"];
+    if (j.contains("lyapunov_iterations")) cfg.lyapunov_iterations = j["lyapunov_iterations"];
+    if (j.contains("lyapunov_seed_x"))     cfg.lyapunov_seed_x     = j["lyapunov_seed_x"];
+
+    if (j.contains("nova_power"))          cfg.nova_power          = j["nova_power"];
+    if (j.contains("nova_relaxation"))     cfg.nova_relaxation     = j["nova_relaxation"];
+    if (j.contains("nova_type"))           cfg.nova_type           = j["nova_type"];
+    if (j.contains("nova_seed_r"))         cfg.nova_seed_r         = j["nova_seed_r"];
+    if (j.contains("nova_seed_i"))         cfg.nova_seed_i         = j["nova_seed_i"];
+    if (j.contains("nova_max_iterations")) cfg.nova_max_iterations = j["nova_max_iterations"];
+    if (j.contains("nova_tolerance"))      cfg.nova_tolerance      = j["nova_tolerance"];
+    if (j.contains("nova_escape_radius"))  cfg.nova_escape_radius  = j["nova_escape_radius"];
+    if (j.contains("nova_saturation"))     cfg.nova_saturation     = j["nova_saturation"];
+
+    if (j.contains("cca_neighborhood"))    cfg.cca_neighborhood    = j["cca_neighborhood"];
+    if (j.contains("cca_states"))          cfg.cca_states          = j["cca_states"];
+    if (j.contains("cca_steps"))           cfg.cca_steps           = j["cca_steps"];
+    if (j.contains("cca_seed"))            cfg.cca_seed            = static_cast<uint32_t>(int(j["cca_seed"]));
+
+    if (j.contains("physarum_num_agents"))     cfg.physarum_num_agents     = j["physarum_num_agents"];
+    if (j.contains("physarum_steps"))          cfg.physarum_steps          = j["physarum_steps"];
+    if (j.contains("physarum_sensor_angle"))   cfg.physarum_sensor_angle   = j["physarum_sensor_angle"];
+    if (j.contains("physarum_sensor_dist"))    cfg.physarum_sensor_dist    = j["physarum_sensor_dist"];
+    if (j.contains("physarum_rotation_angle")) cfg.physarum_rotation_angle = j["physarum_rotation_angle"];
+    if (j.contains("physarum_step_size"))      cfg.physarum_step_size      = j["physarum_step_size"];
+    if (j.contains("physarum_deposit"))        cfg.physarum_deposit        = j["physarum_deposit"];
+    if (j.contains("physarum_decay"))          cfg.physarum_decay          = j["physarum_decay"];
+    if (j.contains("physarum_seed"))           cfg.physarum_seed           = static_cast<uint32_t>(int(j["physarum_seed"]));
+
     if (j.contains("postprocess")) {
         auto& pp = j["postprocess"];
         if (pp.contains("gamma"))      cfg.postprocess.gamma      = pp["gamma"];
@@ -127,161 +163,88 @@ SceneConfig SceneConfig::from_json(const std::string& path) {
         if (pp.contains("vignette"))   cfg.postprocess.vignette   = pp["vignette"];
     }
 
-    // Palette phase
-    if (j.contains("palette_phase")) cfg.palette_phase = j["palette_phase"];
+    if (j.contains("palette_phase"))   cfg.palette_phase    = j["palette_phase"];
+    if (j.contains("aco_palette"))     cfg.aco_palette_path = j["aco_palette"];
 
     if (j.contains("threads"))    cfg.thread_count = j["threads"];
     if (j.contains("tile_size"))  cfg.tile_size    = j["tile_size"];
     if (j.contains("aa"))         cfg.aa_samples   = j["aa"];
     if (j.contains("dpi"))        cfg.output_dpi   = j["dpi"];
+}
+
+SceneConfig SceneConfig::from_json(const std::string& path) {
+    // Auto-load defaults.json from the same directory, if present.
+    SceneConfig cfg;
+    std::string dir;
+    auto slash = path.find_last_of("/\\");
+    if (slash != std::string::npos) dir = path.substr(0, slash + 1);
+    std::string defaults_path = dir + "defaults.json";
+    {
+        std::ifstream df(defaults_path);
+        if (df.is_open()) {
+            apply_json(cfg, nlohmann::json::parse(df));
+            std::printf("  Defaults: %s\n", defaults_path.c_str());
+        }
+    }
+
+    std::ifstream f(path);
+    if (!f.is_open())
+        throw std::runtime_error("Cannot open config: " + path);
+    apply_json(cfg, nlohmann::json::parse(f));
 
     return cfg;
 }
 
-// ── Palette factory ───────────────────────────────────────────────────────────
+// ── Palette factory (public method) ───────────────────────────────────────────
 
-static Palette build_palette(const SceneConfig& cfg) {
+Palette SceneConfig::build_palette() const {
+    // ACO file overrides all palette_* fields when provided
+    if (!aco_palette_path.empty()) {
+        try { return load_aco(aco_palette_path); }
+        catch (...) { /* fall through to normal palette */ }
+    }
+
     auto set_common = [&](Palette& p) {
-        p.use_lab_interpolation = cfg.palette_lab;
-        p.phase = cfg.palette_phase;
+        p.use_lab_interpolation = palette_lab;
+        p.phase = palette_phase;
     };
-    if (cfg.palette_type == "complementary") {
-        auto p = PaletteGenerator::complementary({cfg.palette_hsl_h, cfg.palette_hsl_s, cfg.palette_hsl_l});
+    if (palette_type == "complementary") {
+        auto p = PaletteGenerator::complementary({palette_hsl_h, palette_hsl_s, palette_hsl_l});
         set_common(p); return p;
     }
-    if (cfg.palette_type == "triadic") {
-        auto p = PaletteGenerator::triadic({cfg.palette_hsl_h, cfg.palette_hsl_s, cfg.palette_hsl_l});
+    if (palette_type == "triadic") {
+        auto p = PaletteGenerator::triadic({palette_hsl_h, palette_hsl_s, palette_hsl_l});
         set_common(p); return p;
     }
-    if (cfg.palette_type == "analogous") {
-        auto p = PaletteGenerator::analogous({cfg.palette_hsl_h, cfg.palette_hsl_s, cfg.palette_hsl_l});
+    if (palette_type == "analogous") {
+        auto p = PaletteGenerator::analogous({palette_hsl_h, palette_hsl_s, palette_hsl_l});
         set_common(p); return p;
     }
-    if (cfg.palette_type == "split_complementary") {
-        auto p = PaletteGenerator::split_complementary({cfg.palette_hsl_h, cfg.palette_hsl_s, cfg.palette_hsl_l});
+    if (palette_type == "split_complementary") {
+        auto p = PaletteGenerator::split_complementary({palette_hsl_h, palette_hsl_s, palette_hsl_l});
         set_common(p); return p;
     }
-    if (cfg.palette_type == "custom" && !cfg.palette_custom_stops.empty()) {
+    if (palette_type == "custom" && !palette_custom_stops.empty()) {
         Palette p;
         set_common(p);
-        for (const auto& [pos, hex] : cfg.palette_custom_stops)
+        for (const auto& [pos, hex] : palette_custom_stops)
             p.add_stop(pos, parse_hex(hex));
         return p;
     }
     // "named" or fallback
-    Palette p = resolve_named(cfg.palette_name);
-    p.use_lab_interpolation = cfg.palette_lab;
-    p.phase = cfg.palette_phase;
+    Palette p = resolve_named(palette_name);
+    p.use_lab_interpolation = palette_lab;
+    p.phase = palette_phase;
     return p;
 }
 
-static ColoringMode parse_coloring_mode(const std::string& s) {
-    if (s == "histogram_eq") return ColoringMode::HistogramEq;
-    if (s == "orbit_trap")   return ColoringMode::OrbitTrap;
-    return ColoringMode::Smooth;
-}
-
-// ── Algorithm factory ─────────────────────────────────────────────────────────
+// ── Algorithm factory (delegates to registry) ─────────────────────────────────
 
 std::unique_ptr<IAlgorithm> SceneConfig::create_algorithm() const {
-    Palette pal = build_palette(*this); // NOLINT(*)
-
-    if (algorithm_name == "mandelbrot" || algorithm_name.empty()) {
-        auto a = std::make_unique<MandelbrotAlgorithm>();
-        a->max_iterations  = max_iterations;
-        a->escape_radius   = escape_radius;
-        a->smooth_coloring = smooth_coloring;
-        a->color_cycle     = color_cycle;
-        a->coloring_mode   = parse_coloring_mode(coloring_mode);
-        a->palette         = pal;
-        return a;
-    }
-
-    if (algorithm_name == "julia") {
-        auto a = std::make_unique<JuliaAlgorithm>();
-        a->max_iterations  = max_iterations;
-        a->escape_radius   = escape_radius;
-        a->smooth_coloring = smooth_coloring;
-        a->color_cycle     = color_cycle;
-        a->coloring_mode   = parse_coloring_mode(coloring_mode);
-        a->palette         = pal;
-        a->seed_r          = julia_cr;
-        a->seed_i          = julia_ci;
-        return a;
-    }
-
-    if (algorithm_name == "burning_ship") {
-        auto a = std::make_unique<BurningShipAlgorithm>();
-        a->max_iterations  = max_iterations;
-        a->escape_radius   = escape_radius;
-        a->smooth_coloring = smooth_coloring;
-        a->color_cycle     = color_cycle;
-        a->coloring_mode   = parse_coloring_mode(coloring_mode);
-        a->palette         = pal;
-        return a;
-    }
-
-    if (algorithm_name == "newton") {
-        auto a = std::make_unique<NewtonAlgorithm>();
-        a->power          = newton_power;
-        a->max_iterations = max_iterations;
-        a->tolerance      = newton_tolerance;
-        a->saturation     = newton_saturation;
-        return a;
-    }
-
-    if (algorithm_name == "noise") {
-        auto a = std::make_unique<NoiseFieldAlgorithm>();
-        a->octaves     = noise_octaves;
-        a->persistence = noise_persistence;
-        a->lacunarity  = noise_lacunarity;
-        a->scale       = noise_scale;
-        a->seed        = noise_seed;
-        a->palette     = pal;
-        return a;
-    }
-
-    if (algorithm_name == "reaction_diffusion" || algorithm_name == "rd") {
-        auto a = std::make_unique<ReactionDiffusion>();
-        if (!rd_preset.empty()) a->set_preset(rd_preset);
-        a->Du    = rd_Du;
-        a->Dv    = rd_Dv;
-        a->feed  = rd_feed;
-        a->kill  = rd_kill;
-        a->dt    = rd_dt;
-        a->steps = rd_steps;
-        a->seed  = rd_seed;
-        a->palette = pal;
-        return a;
-    }
-
-    if (algorithm_name == "lsystem") {
-        auto a = std::make_unique<LSystemAlgorithm>();
-        if (!ls_preset.empty()) {
-            a->set_preset(ls_preset);
-        }
-        // Override preset with explicit params if provided
-        if (!ls_axiom.empty()) a->axiom = ls_axiom;
-        if (!ls_rules.empty()) {
-            // parse semicolon-separated "X=successor;Y=..."
-            std::istringstream ss(ls_rules);
-            std::string token;
-            while (std::getline(ss, token, ';')) {
-                auto eq = token.find('=');
-                if (eq != std::string::npos && eq > 0) {
-                    char pred = token[0];
-                    a->rules.push_back({pred, token.substr(eq + 1)});
-                }
-            }
-        }
-        if (ls_iterations > 0) a->iterations = ls_iterations;
-        if (ls_angle > 0.0f)   a->angle_deg  = ls_angle;
-        if (!ls_fg_color.empty()) a->fg_color = parse_hex(ls_fg_color);
-        if (!ls_bg_color.empty()) a->bg_color = parse_hex(ls_bg_color);
-        return a;
-    }
-
-    throw std::runtime_error("Unknown algorithm: '" + algorithm_name + "'");
+    auto algo = AlgorithmRegistry::create(algorithm_name, *this);
+    if (!algo)
+        throw std::runtime_error("Unknown algorithm: '" + algorithm_name + "'");
+    return algo;
 }
 
 } // namespace artgen

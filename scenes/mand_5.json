@@ -1,0 +1,4 @@
+{"algorithm":"mandelbrot","output":"gallery/mand_5.png",
+ "viewport":{"real_min":-2.5,"real_max":1.0,"imag_min":-1.25,"imag_max":1.25,"width":1920,"height":1080},
+ "max_iterations":1000,"coloring_mode":"orbit_trap","palette":"fire",
+ "palette_type":"complementary","palette_hsl":[200.0,0.85,0.5]}

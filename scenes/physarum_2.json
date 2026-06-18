@@ -1,0 +1,11 @@
+{
+    "algorithm": "physarum",
+    "output": "gallery/physarum_2.png",
+    "viewport": { "width": 1080, "height": 1080, "real_min": 0, "real_max": 1, "imag_min": 0, "imag_max": 1 },
+    "physarum_steps": 500,
+    "physarum_sensor_angle": 22.5,
+    "physarum_sensor_dist": 12.0,
+    "physarum_rotation_angle": 30.0,
+    "physarum_seed": 99,
+    "palette": "fire"
+}

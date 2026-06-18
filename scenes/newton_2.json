@@ -1,0 +1,3 @@
+{"algorithm":"newton","output":"gallery/newton_2.png",
+ "viewport":{"real_min":-2.0,"real_max":2.0,"imag_min":-2.0,"imag_max":2.0,"width":1080,"height":1080},
+ "newton_power":4,"max_iterations":200,"newton_saturation":0.8}

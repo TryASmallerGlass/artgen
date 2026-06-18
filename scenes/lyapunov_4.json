@@ -1,0 +1,10 @@
+{
+    "algorithm": "lyapunov",
+    "output": "gallery/lyapunov_4.png",
+    "viewport": { "real_min": 2.5, "real_max": 4.0, "imag_min": 2.5, "imag_max": 4.0, "width": 1920, "height": 1920 },
+    "lyapunov_sequence": "AAABBB",
+    "lyapunov_warmup": 300,
+    "lyapunov_iterations": 1500,
+    "palette_type": "complementary",
+    "palette_hsl": [240.0, 0.8, 0.5]
+}

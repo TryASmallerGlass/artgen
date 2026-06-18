@@ -1,0 +1,4 @@
+{"algorithm":"burning_ship","output":"gallery/ship_5.png",
+ "viewport":{"real_min":-1.90,"real_max":-1.45,"imag_min":-0.15,"imag_max":0.10,"width":1920,"height":1080},
+ "max_iterations":2000,"coloring_mode":"orbit_trap",
+ "palette_type":"complementary","palette_hsl":[30.0,0.9,0.5]}

@@ -1,0 +1,32 @@
+{
+    "_note": "Auto-loaded before every scene in this directory. Scene files override any value here.",
+
+    "smooth_coloring": true,
+    "escape_radius": 2.0,
+    "bit_depth": 8,
+    "threads": 0,
+    "tile_size": 64,
+    "aa": 1,
+    "dpi": 300,
+
+    "newton_tolerance": 1e-6,
+
+    "rd_steps": 8000,
+
+    "attractor_iterations": 8000000,
+
+    "lyapunov_warmup": 200,
+    "lyapunov_iterations": 1000,
+
+    "nova_relaxation": 1.0,
+    "nova_max_iterations": 256,
+    "nova_tolerance": 1e-6,
+    "nova_escape_radius": 1e6,
+
+    "physarum_num_agents": 200000,
+    "physarum_step_size": 1.0,
+    "physarum_deposit": 5.0,
+    "physarum_decay": 0.95,
+
+    "voronoi_metric": "euclidean"
+}

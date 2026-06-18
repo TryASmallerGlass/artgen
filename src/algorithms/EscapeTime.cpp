@@ -10,10 +10,10 @@ float EscapeTimeAlgorithm::compute_t(const IterResult& r) const {
     if (!smooth_coloring)
         return static_cast<float>(std::fmod(r.iter / color_cycle, 1.0));
 
-    double log_er = std::log(escape_radius);
-    double log_2  = std::log(2.0);
-    double mod    = std::sqrt(r.zr * r.zr + r.zi * r.zi);
-    double nu     = std::log(std::log(mod) / log_er) / log_2;
+    double log_er   = std::log(escape_radius);
+    double log_base = std::log(std::max(power, 1.0001)); // generalised: log_2 for power==2
+    double mod      = std::sqrt(r.zr * r.zr + r.zi * r.zi);
+    double nu       = std::log(std::log(mod) / log_er) / log_base;
     // +1 offset (Linas Vepstas formula) keeps smooth_iter positive even for fast escapes
     double si     = static_cast<double>(r.iter) + 1.0 - nu;
     return static_cast<float>(std::fmod(std::max(0.0, si) / color_cycle, 1.0));

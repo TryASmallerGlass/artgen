@@ -1,0 +1,8 @@
+{
+    "algorithm": "ikeda",
+    "output": "gallery/ikeda_3.png",
+    "viewport": {"real_min":-2.5,"real_max":3.5,"imag_min":-2.5,"imag_max":2.5,"width":1080,"height":1080},
+    "attractor_u": 0.88,
+    "attractor_iterations": 15000000,
+    "palette": "ice"
+}

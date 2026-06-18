@@ -1,0 +1,3 @@
+{"algorithm":"lsystem","output":"gallery/ls_5.png",
+ "viewport":{"real_min":0,"real_max":1,"imag_min":0,"imag_max":1,"width":1080,"height":1080},
+ "ls_preset":"tree","ls_iterations":5,"ls_angle":22.5,"ls_fg_color":"#BBEE44","ls_bg_color":"#040602"}

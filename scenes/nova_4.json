@@ -1,0 +1,12 @@
+{
+    "algorithm": "nova",
+    "output": "gallery/nova_4.png",
+    "viewport": { "real_min": -2.0, "real_max": 2.0, "imag_min": -2.0, "imag_max": 2.0, "width": 1920, "height": 1920 },
+    "nova_type": "julia",
+    "nova_power": 3,
+    "nova_seed_r": -0.5,
+    "nova_seed_i": 0.3,
+    "nova_saturation": 0.8,
+    "palette_type": "complementary",
+    "palette_hsl": [280.0, 0.8, 0.5]
+}
