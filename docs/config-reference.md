@@ -17,7 +17,7 @@ If `defaults.json` exists in the same directory as the scene file, it is loaded 
   "viewport":   { … },
   "threads":    0,              // 0 = hardware_concurrency
   "tile_size":  64,
-  "aa":         1,              // antialiasing: 1=off, 4=2×2spp, 9=3×3, 16=4×4
+  "aa":         1,              // antialiasing: per-axis supersampling factor (total spp = aa×aa); 1=off, 2=2×2 (4spp), 3=3×3 (9spp)
   // … algorithm-specific keys …
   "postprocess": { … }
 }
@@ -44,7 +44,7 @@ If `defaults.json` exists in the same directory as the scene file, it is loaded 
 |---|---|---|---|
 | `threads` | int | `0` | Worker thread count. `0` = auto-detect (hardware concurrency). |
 | `tile_size` | int | `64` | Tile side length in pixels for the multithreaded tile renderer. |
-| `aa` | int | `1` | Antialiasing samples per pixel (grid super-sampling). `1` = off, `4` = 2×2, `9` = 3×3, `16` = 4×4. |
+| `aa` | int | `1` | Per-axis supersampling factor (total spp = `aa×aa`). `1` = off, `2` = 2×2 (4spp), `3` = 3×3 (9spp), `4` = 4×4 (16spp). |
 
 ### Viewport
 
