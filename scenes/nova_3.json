@@ -4,8 +4,6 @@
     "viewport": { "real_min": -2.0, "real_max": 2.0, "imag_min": -2.0, "imag_max": 2.0, "width": 1920, "height": 1920 },
     "nova_type": "mandelbrot",
     "nova_power": 5,
-    "nova_relaxation": 1.0,
-    "nova_max_iterations": 256,
     "nova_saturation": 0.85,
     "palette": "ice"
 }

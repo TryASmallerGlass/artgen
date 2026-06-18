@@ -10,7 +10,5 @@
     "rd_preset": "worms",
     "rd_steps": 10000,
     "rd_seed": 7,
-    "palette": "fire",
-    "threads": 0,
-    "tile_size": 64
+    "palette": "fire"
 }

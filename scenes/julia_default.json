@@ -12,8 +12,6 @@
     "julia_cr": -0.7,
     "julia_ci":  0.27015,
     "max_iterations": 500,
-    "escape_radius": 2.0,
-    "smooth_coloring": true,
     "color_cycle": 48.0,
     "palette": "electric"
 }

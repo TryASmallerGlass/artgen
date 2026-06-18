@@ -1,7 +1,8 @@
 # Algorithm Deep Dive
 
 A mathematical and conceptual reference for every algorithm in Keeper.  For JSON
-configuration keys, see [algorithms.md](algorithms.md).
+configuration keys, see [algorithms.md](algorithms.md).  For default parameter
+values, see [`scenes/defaults.json`](../scenes/defaults.json).
 
 ---
 

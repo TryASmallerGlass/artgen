@@ -1,33 +1,29 @@
 # Config Reference
 
-All scene parameters are set in a JSON file passed to the renderer via `--config path/to/scene.json`.  Only the fields you want to override need to be present; every field has a default value.
+All scene parameters are set in a JSON file passed to the renderer via `--config path/to/scene.json`.  Only fields you want to override need to be present — every field has a default value.
+
+If `defaults.json` exists in the same directory as the scene file, it is loaded first and the scene file overlays it.  See [`scenes/defaults.json`](../scenes/defaults.json) for the project-wide defaults.
 
 ---
 
 ## Top-level structure
 
-```json
+```jsonc
 {
-  "algorithm":        "mandelbrot",
-  "width":            1920,
-  "height":           1080,
-  "max_iterations":   500,
-  "escape_radius":    2.0,
-  "smooth_coloring":  true,
-  "coloring_mode":    "smooth",
-  "color_cycle":      64.0,
-  "viewport":         { … },
-  "palette":          { … },
-  "aco_palette":      "path/to/swatches.aco",
-  "postprocess":      { … },
-  "output":           "output/image.png",
-  "output_dpi":       150,
-  "bit_depth":        8,
-  "threads":          0,
-  "tile_size":        64,
-  "aa_samples":       1
+  "algorithm":  "mandelbrot",   // which algorithm to render
+  "output":     "out.png",      // output path — extension controls format
+  "bit_depth":  8,              // 8 or 16 (TIFF only); EXR is always float32
+  "dpi":        300,
+  "viewport":   { … },
+  "threads":    0,              // 0 = hardware_concurrency
+  "tile_size":  64,
+  "aa":         1,              // antialiasing: per-axis supersampling factor (total spp = aa×aa); 1=off, 2=2×2 (4spp), 3=3×3 (9spp)
+  // … algorithm-specific keys …
+  "postprocess": { … }
 }
 ```
+
+> **Output naming:** at runtime the renderer replaces the filename portion of `output` with an auto-generated stem `[algo7]_YYYYMMDD_HHMM_NNNNN` (first 7 chars of algorithm name, timestamp, 5-digit counter).  The directory and extension from `output` are preserved.  A copy of the scene JSON is saved to `ImageSettings/[same stem].json`.
 
 ---
 
@@ -37,84 +33,27 @@ All scene parameters are set in a JSON file passed to the renderer via `--config
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `algorithm` | string | `"mandelbrot"` | Which algorithm to render.  See [algorithms.md](algorithms.md) for all keys. |
-| `width` | int | `1920` | Output image width in pixels. |
-| `height` | int | `1080` | Output image height in pixels. |
-| `output` | string | `"output/render.png"` | Output file path.  Extension determines format: `.png`, `.tiff`/`.tif`, `.exr`. |
-| `output_dpi` | int | `96` | DPI tag embedded in PNG/TIFF metadata (no effect on EXR). |
-| `bit_depth` | int | `8` | `8` = 8-bit per channel PNG/TIFF, `16` = 16-bit per channel.  EXR is always 32-bit float (fp16 optional). |
+| `algorithm` | string | `"mandelbrot"` | Which algorithm to render — see [algorithms.md](algorithms.md). |
+| `output` | string | `"output.png"` | Output path. Extension determines format: `.png`, `.tiff`/`.tif`, `.exr`. |
+| `dpi` | int | `300` | DPI tag embedded in PNG/TIFF metadata (no effect on EXR). |
+| `bit_depth` | int | `8` | `8` = 8-bit per channel PNG/TIFF; `16` = 16-bit. EXR is always 32-bit float. |
 
-### Rendering quality
+### Renderer
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `threads` | int | `0` | Worker thread count.  `0` = auto-detect (hardware concurrency). |
-| `tile_size` | int | `64` | Tile side length in pixels for the multi-threaded tile renderer. |
-| `aa_samples` | int | `1` | Anti-aliasing samples per pixel (grid super-sampling).  `1` = off, `4` = 2×2, `9` = 3×3, `16` = 4×4. |
-
-### Escape-time parameters (Mandelbrot, Julia, Burning Ship)
-
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `max_iterations` | int | `500` | Maximum iteration count before a point is considered in-set. |
-| `escape_radius` | float | `2.0` | Magnitude threshold that marks a point as escaped. |
-| `smooth_coloring` | bool | `true` | Alias for `coloring_mode: "smooth"`.  Ignored when `coloring_mode` is set explicitly. |
-| `coloring_mode` | string | `"smooth"` | `"smooth"`, `"histogram_eq"`, or `"orbit_trap"`. |
-| `color_cycle` | float | `64.0` | Number of palette repetitions across the iteration range.  Higher = tighter colour bands. |
-
-### Julia parameters
-
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `julia_cr` | float | `-0.7` | Real part of the fixed seed _c_. |
-| `julia_ci` | float | `0.27015` | Imaginary part of the fixed seed _c_. |
-
-### Newton parameters
-
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `newton_power` | int | `3` | Polynomial degree _n_ for _f(z) = zⁿ − 1_.  Must be ≥ 2. |
-| `newton_tolerance` | float | `1e-6` | Convergence tolerance (root considered found when `|f(z)| < tolerance`). |
-| `newton_saturation` | float | `0.8` | Colour saturation of basin hues (0 = grey, 1 = vivid). |
-
-### Noise / FBM parameters
-
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `noise_octaves` | int | `6` | Number of frequency layers summed. |
-| `noise_persistence` | float | `0.5` | Amplitude falloff factor per octave (0–1). |
-| `noise_lacunarity` | float | `2.0` | Frequency multiplier per octave. |
-| `noise_scale` | float | `1.0` | Global frequency scale (higher = more pattern repetitions per image). |
-| `noise_seed` | uint | `0` | RNG seed for the simplex permutation table. |
-
-### Reaction-diffusion parameters
-
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `rd_preset` | string | `"coral"` | Named preset: `"coral"`, `"mitosis"`, `"worms"`, `"maze"`, `"spots"`, `"fingerprint"`. |
-| `rd_feed` | float | preset | Feed rate _F_ — overrides the preset value. |
-| `rd_kill` | float | preset | Kill rate _k_ — overrides the preset value. |
-| `rd_steps` | int | `8000` | Number of Gray-Scott time steps to simulate. |
-| `rd_seed` | uint | `0` | RNG seed for the initial random perturbation. |
-
-### L-System parameters
-
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `ls_preset` | string | `""` | Named preset: `"plant"`, `"dragon"`, `"sierpinski"`, `"hilbert"`, `"tree"`.  Fills `ls_axiom`, `ls_rules`, `ls_iterations`, `ls_angle`. |
-| `ls_axiom` | string | `"F"` | Initial axiom string. |
-| `ls_rules` | string | `""` | Semicolon-separated production rules, e.g. `"F=FF;X=F+[[X]-X]-F[-FX]+X"`. |
-| `ls_iterations` | int | `5` | Number of rule-expansion steps. |
-| `ls_angle` | float | `25.0` | Turtle turn angle in degrees (`+` turns left, `-` turns right). |
-| `ls_fg_color` | string | `"#33CC55"` | Foreground (line) colour as `#RRGGBB` hex. |
-| `ls_bg_color` | string | `"#080D08"` | Background fill colour as `#RRGGBB` hex. |
+| `threads` | int | `0` | Worker thread count. `0` = auto-detect (hardware concurrency). |
+| `tile_size` | int | `64` | Tile side length in pixels for the multithreaded tile renderer. |
+| `aa` | int | `1` | Per-axis supersampling factor (total spp = `aa×aa`). `1` = off, `2` = 2×2 (4spp), `3` = 3×3 (9spp), `4` = 4×4 (16spp). |
 
 ### Viewport
 
-Nested object that maps pixels to complex-plane coordinates.
+Nested object mapping pixels to complex-plane coordinates.
 
 ```json
 "viewport": {
+  "width":    1920,
+  "height":   1080,
   "real_min": -2.5,
   "real_max":  1.0,
   "imag_min": -1.25,
@@ -124,50 +63,196 @@ Nested object that maps pixels to complex-plane coordinates.
 
 | Field | Type | Default | Description |
 |---|---|---|---|
+| `width` | int | `1920` | Output image width in pixels. |
+| `height` | int | `1080` | Output image height in pixels. |
 | `real_min` | float | `-2.5` | Left edge of the complex plane window. |
 | `real_max` | float | `1.0` | Right edge. |
 | `imag_min` | float | `-1.25` | Bottom edge. |
 | `imag_max` | float | `1.25` | Top edge. |
 
-If the viewport aspect ratio does not match `width/height` the image will be non-square stretch of the mathematical space — usually intentional for tall/wide crops.
-
-### Palette
-
-Nested object for the gradient used to colour escape-time / noise values.
-
-```json
-"palette": {
-  "stops": [
-    { "t": 0.0,  "color": "#000033" },
-    { "t": 0.5,  "color": "#FF8800" },
-    { "t": 1.0,  "color": "#FFFFFF" }
-  ],
-  "lab_interpolation": false,
-  "phase": 0.0
-}
-```
+### Escape-time (mandelbrot, julia, burning_ship, multibrot, tricorn)
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `stops` | array | built-in blue-gold | Array of `{ "t": float, "color": "#RRGGBB" }` entries.  `t` in [0, 1]. |
-| `lab_interpolation` | bool | `false` | Interpolate in CIELAB space instead of sRGB (perceptually uniform, avoids grey mid-tones). |
-| `phase` | float | `0.0` | Rotation offset applied before sampling: `t_actual = fmod(t + phase + 1, 1)`. |
+| `max_iterations` | int | `1000` | Iteration cap before a point is considered in-set. |
+| `escape_radius` | float | `2.0` | Magnitude threshold that marks a point as escaped. |
+| `smooth_coloring` | bool | `true` | Enable Linas Vepstas continuous colouring (no banding). |
+| `coloring_mode` | string | `"smooth"` | `"smooth"`, `"histogram_eq"`, or `"orbit_trap"`. |
+| `color_cycle` | float | `64.0` | Palette repetitions across the iteration range. Higher = tighter bands. |
 
-### ACO palette import
+### Julia seed
 
-```json
-"aco_palette": "palettes/my_swatches.aco"
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `julia_cr` | float | `-0.7` | Real part of the fixed seed c. |
+| `julia_ci` | float | `0.27015` | Imaginary part of the fixed seed c. |
+
+### Multibrot
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `multibrot_power` | float | `3.0` | Exponent n in zⁿ + c (any real value; 2.0 = Mandelbrot). |
+
+### Newton
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `newton_power` | int | `3` | Polynomial degree n for f(z) = zⁿ − 1.  Must be ≥ 2. |
+| `newton_tolerance` | float | `1e-6` | Convergence tolerance — root found when \|f(z)\| < tolerance. |
+| `newton_saturation` | float | `0.8` | Saturation of basin hues (0 = grey, 1 = vivid). |
+
+### Nova
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `nova_type` | string | `"mandelbrot"` | `"mandelbrot"` (z₀=1, c=pixel) or `"julia"` (z₀=pixel, c=seed). |
+| `nova_power` | int | `3` | Polynomial degree. |
+| `nova_relaxation` | float | `1.0` | Step-size multiplier R; ≠ 1 creates extra boundary detail. |
+| `nova_seed_r` | float | `1.0` | Fixed c real part (julia mode only). |
+| `nova_seed_i` | float | `0.0` | Fixed c imaginary part (julia mode only). |
+| `nova_max_iterations` | int | `256` | Per-pixel iteration cap. |
+| `nova_tolerance` | float | `1e-6` | Convergence tolerance for Newton step. |
+| `nova_escape_radius` | float | `1e6` | Escape threshold magnitude. |
+| `nova_saturation` | float | `0.8` | HSV saturation for converged basin colouring. |
+
+### Simplex Noise FBM
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `noise_octaves` | int | `6` | Number of frequency layers summed. |
+| `noise_persistence` | float | `0.5` | Amplitude falloff per octave (0–1). |
+| `noise_lacunarity` | float | `2.0` | Frequency multiplier per octave. |
+| `noise_scale` | float | `1.0` | Global frequency scale. |
+| `noise_seed` | uint | `42` | RNG seed for the simplex permutation table. |
+
+### Reaction-Diffusion (Gray-Scott)
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `rd_preset` | string | — | Named preset: `"coral"`, `"mitosis"`, `"worms"`, `"maze"`, `"spots"`, `"fingerprint"`. |
+| `rd_feed` | float | preset | Feed rate F — overrides the preset value. |
+| `rd_kill` | float | preset | Kill rate k — overrides the preset value. |
+| `rd_steps` | int | `8000` | Number of Gray-Scott time steps to simulate. |
+| `rd_seed` | uint | `42` | RNG seed for the initial random perturbation. |
+
+### Plasma (Diamond-Square)
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `plasma_roughness` | float | `0.5` | Amplitude scale per level [0, 1]; lower = smoother. |
+| `plasma_octaves` | int | `8` | Grid resolution = 2^octaves + 1; 8 → 257×257 grid. |
+| `plasma_seed` | uint | `42` | RNG seed. |
+
+### Strange Attractor (Clifford / De Jong)
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `attractor_type` | string | `"clifford"` | `"clifford"` or `"dejong"`. |
+| `attractor_a` – `attractor_d` | float | see SceneConfig.h | Four shape parameters. |
+| `attractor_iterations` | int | `8000000` | Orbit length (more = denser, smoother). |
+
+### Ikeda Map
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `attractor_u` | float | `0.9` | Nonlinearity parameter. Best range: [0.75, 0.90]. |
+| `attractor_iterations` | int | `8000000` | Orbit length. |
+
+### Voronoi
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `voronoi_seeds` | int | `32` | Number of seed points. |
+| `voronoi_seed` | uint | `42` | RNG seed for seed placement. |
+| `voronoi_mode` | string | `"cells"` | `"cells"`, `"distance"`, or `"edge"`. |
+| `voronoi_metric` | string | `"euclidean"` | `"euclidean"`, `"manhattan"`, or `"chebyshev"`. |
+
+### L-System
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `ls_preset` | string | — | Named preset: `"plant"`, `"dragon"`, `"sierpinski"`, `"hilbert"`, `"tree"`. |
+| `ls_axiom` | string | `"F"` | Initial axiom string (overrides preset). |
+| `ls_rules` | string | — | Semicolon-separated production rules, e.g. `"F=FF;X=F+[[X]-X]"`. |
+| `ls_iterations` | int | `5` | Number of rule-expansion steps. |
+| `ls_angle` | float | `25.7` | Turtle turn angle in degrees. |
+| `ls_fg_color` | string | `"#33CC55"` | Foreground (line) colour as `#RRGGBB`. |
+| `ls_bg_color` | string | `"#080D08"` | Background colour as `#RRGGBB`. |
+
+### Lyapunov Fractal
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `lyapunov_sequence` | string | `"AB"` | Sequence of `'A'` (real coord) and `'B'` (imag coord). |
+| `lyapunov_warmup` | int | `200` | Logistic-map steps discarded before λ accumulation. |
+| `lyapunov_iterations` | int | `1000` | Steps used to compute λ. |
+| `lyapunov_seed_x` | float | `0.5` | Initial x₀ for the logistic map. |
+
+Keep viewport within (2, 4) × (2, 4) — outside this range the logistic map diverges.
+
+### Cyclic Cellular Automaton
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `cca_states` | int | `12` | Number of distinct states N (2–255). |
+| `cca_neighborhood` | string | `"moore"` | `"moore"` (8-neighbor) or `"vonneumann"` (4-neighbor). |
+| `cca_steps` | int | `500` | Simulation steps before rendering. |
+| `cca_seed` | uint | `42` | RNG seed for the initial random grid. |
+
+### Physarum (Slime Mould)
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `physarum_num_agents` | int | `200000` | Agent count. More → denser coverage. |
+| `physarum_steps` | int | `400` | Simulation steps. More → more evolved networks. |
+| `physarum_sensor_angle` | float | `45.0` | Forward sensor spread angle (degrees). Wider → branchy; narrower → highways. |
+| `physarum_sensor_dist` | float | `9.0` | Sensor look-ahead distance in pixels. |
+| `physarum_rotation_angle` | float | `45.0` | Agent turn amount per step (degrees). |
+| `physarum_step_size` | float | `1.0` | Agent step size in pixels. |
+| `physarum_deposit` | float | `5.0` | Trail chemical deposited per step. |
+| `physarum_decay` | float | `0.95` | Trail evaporation factor per step. |
+| `physarum_seed` | uint | `42` | RNG seed. |
+
+### Palette
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `palette` | string | `"classic_mandelbrot"` | Named palette: `"fire"`, `"ice"`, `"electric"`, `"grayscale"`. |
+| `palette_lab` | bool | `false` | Interpolate in CIELAB space (perceptually uniform; avoids grey mid-tones). |
+| `palette_phase` | float | `0.0` | Cyclic hue rotation offset [0, 1). |
+| `palette_type` | string | `"named"` | `"complementary"`, `"triadic"`, `"analogous"`, `"split_complementary"`, or `"custom"`. |
+| `palette_hsl` | array | `[200, 0.8, 0.5]` | Base HSL for generated palette types: `[hue_deg, saturation, lightness]`. |
+| `palette_stops` | array | — | Custom gradient stops. Requires `palette_type: "custom"`. Each entry: `{"pos": float, "color": "#RRGGBB"}`. |
+| `aco_palette` | string | — | Path to an Adobe `.aco` swatch file. Overrides all other `palette_*` fields when set. |
+
+```jsonc
+// Named palette
+{ "palette": "fire" }
+
+// Generated palette
+{ "palette_type": "triadic", "palette_hsl": [200, 0.85, 0.5] }
+
+// Custom gradient
+{
+  "palette_type": "custom",
+  "palette_stops": [
+    { "pos": 0.0, "color": "#000000" },
+    { "pos": 0.5, "color": "#FF6600" },
+    { "pos": 1.0, "color": "#FFFFFF" }
+  ]
+}
+
+// Adobe swatch import
+{ "aco_palette": "palettes/my_swatches.aco" }
 ```
-
-Path to an Adobe Photoshop `.aco` swatch file.  When present, this **overrides** the `palette` object.  Version-1 and version-2 ACO files are supported.  Supported colour spaces: RGB, HSB, CMYK, L\*a\*b\*, Grayscale.
 
 ### Post-processing
 
-Nested object applied after the algorithm render, before saving.
+Applied after the algorithm render, before saving.
 
 ```json
 "postprocess": {
-  "gamma":      2.2,
+  "gamma":      1.0,
   "brightness": 0.0,
   "contrast":   1.0,
   "saturation": 1.0,
@@ -177,11 +262,11 @@ Nested object applied after the algorithm render, before saving.
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `gamma` | float | `1.0` | Gamma correction exponent.  `1.0` = linear, `2.2` = standard display gamma. |
-| `brightness` | float | `0.0` | Additive brightness adjustment (−1 to +1). |
-| `contrast` | float | `1.0` | Contrast multiplier around mid-grey.  `< 1` = lower contrast, `> 1` = higher contrast. |
-| `saturation` | float | `1.0` | Saturation scale.  `0` = greyscale, `1` = unchanged, `> 1` = boosted. |
-| `vignette` | float | `0.0` | Vignette strength (0–1).  Darkens corners with a quadratic radial falloff. |
+| `gamma` | float | `1.0` | Gamma correction exponent. `1.0` = linear; `2.2` = standard display gamma. |
+| `brightness` | float | `0.0` | Additive brightness offset (−1 to +1). |
+| `contrast` | float | `1.0` | Contrast multiplier around mid-grey. |
+| `saturation` | float | `1.0` | Saturation scale. `0` = greyscale, `>1` = boosted. |
+| `vignette` | float | `0.0` | Radial corner darkening [0, 1]. |
 
 ---
 
@@ -190,9 +275,7 @@ Nested object applied after the algorithm render, before saving.
 ```json
 {
   "algorithm": "mandelbrot",
-  "width": 800,
-  "height": 600,
-  "output": "output/test.png"
+  "viewport": { "width": 800, "height": 600 }
 }
 ```
 
@@ -201,34 +284,23 @@ Nested object applied after the algorithm render, before saving.
 ```json
 {
   "algorithm": "burning_ship",
-  "width": 3840,
-  "height": 2160,
+  "viewport": {
+    "width": 3840, "height": 2160,
+    "real_min": -1.8, "real_max": -1.7,
+    "imag_min": -0.09, "imag_max": 0.01
+  },
   "max_iterations": 2000,
   "coloring_mode": "histogram_eq",
   "color_cycle": 32.0,
-  "viewport": {
-    "real_min": -1.8,
-    "real_max": -1.7,
-    "imag_min": -0.09,
-    "imag_max":  0.01
-  },
-  "palette": {
-    "stops": [
-      { "t": 0.0, "color": "#0a0010" },
-      { "t": 0.4, "color": "#8b0000" },
-      { "t": 0.7, "color": "#ff6600" },
-      { "t": 1.0, "color": "#ffe0a0" }
-    ],
-    "lab_interpolation": true
-  },
-  "postprocess": {
-    "gamma": 2.0,
-    "contrast": 1.15,
-    "vignette": 0.3
-  },
-  "output": "output/burning_ship_crop.png",
-  "output_dpi": 300,
-  "aa_samples": 4,
-  "threads": 0
+  "palette_type": "custom",
+  "palette_lab": true,
+  "palette_stops": [
+    { "pos": 0.0, "color": "#0a0010" },
+    { "pos": 0.4, "color": "#8b0000" },
+    { "pos": 0.7, "color": "#ff6600" },
+    { "pos": 1.0, "color": "#ffe0a0" }
+  ],
+  "postprocess": { "gamma": 2.0, "contrast": 1.15, "vignette": 0.3 },
+  "aa": 4
 }
 ```

@@ -1,4 +1,4 @@
 {"algorithm":"reaction_diffusion","output":"gallery/rd_4.png",
  "viewport":{"real_min":0,"real_max":1,"imag_min":0,"imag_max":1,"width":1024,"height":1024},
- "rd_preset":"maze","rd_steps":8000,"rd_seed":314,
+ "rd_preset":"maze","rd_seed":314,
  "palette_type":"triadic","palette_hsl":[240.0,0.8,0.5]}
