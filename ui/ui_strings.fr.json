@@ -17,7 +17,7 @@
     "voronoi":            { "label": "Diagramme de Voronoï",          "tooltip": "Partitionne le plan en assignant chaque pixel à son point générateur le plus proche. Trois modes de colorisation et trois métriques de distance produisent 9 styles visuels distincts." },
     "lsystem":            { "label": "Système-L",                     "tooltip": "Système de réécriture de chaînes de Lindenmayer rendu en graphiques tortue.\n\n⚠ Chaque itération multiplie le nombre de commandes de dessin — les valeurs au-delà de 8 peuvent prendre des minutes." },
     "lyapunov":           { "label": "Fractale de Lyapunov",          "tooltip": "Colorie chaque pixel (a, b) selon l'exposant de Lyapunov λ d'une application logistique.\n\n⚠ Les deux coordonnées doivent rester strictement dans (2, 4). En dehors de cette plage, l'image est noire." },
-    "cca":                { "label": "Automate Cellulaire Cyclique",  "tooltip": "Chaque cellule avance à l'état suivant (mod N) quand elle voit au moins un voisin déjà dans cet état suivant.\n\nDes vagues en spirale rotative se forment spontanément à partir d'un départ aléatoire." },
+    "cyclic_ca":          { "label": "Automate Cellulaire Cyclique",  "tooltip": "Chaque cellule avance à l'état suivant (mod N) quand elle voit au moins un voisin déjà dans cet état suivant.\n\nDes vagues en spirale rotative se forment spontanément à partir d'un départ aléatoire." },
     "physarum":           { "label": "Physarum (Moisissure Gluante)", "tooltip": "Simule des agents Physarum polycephalum qui déposent, sentent et suivent des traces chimiques.\n\nLe réseau émergent trouve spontanément des chemins quasi-optimaux — similaire à la moisissure gluante biologique résolvant des labyrinthes." }
   },
 

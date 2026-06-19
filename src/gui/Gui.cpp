@@ -93,7 +93,7 @@ static SDL_Texture* upload_to_texture(SDL_Renderer* ren, SDL_Texture* existing,
                                        const PixelBuffer& buf) {
     int W = buf.width(), H = buf.height();
     if (existing) SDL_DestroyTexture(existing);
-    SDL_Texture* tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ABGR8888,
+    SDL_Texture* tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBA32,
                                           SDL_TEXTUREACCESS_STREAMING, W, H);
     if (!tex) return nullptr;
     void* pixels; int pitch;
@@ -249,7 +249,7 @@ static SDL_Texture* make_palette_tex(SDL_Renderer* ren, SDL_Texture* existing,
                                       const SceneConfig& cfg) {
     constexpr int W = 256, H = 1;
     if (existing) SDL_DestroyTexture(existing);
-    SDL_Texture* tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ABGR8888,
+    SDL_Texture* tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBA32,
                                           SDL_TEXTUREACCESS_STREAMING, W, H);
     if (!tex) return nullptr;
     Palette pal = cfg.build_palette();
@@ -295,7 +295,7 @@ static void draw_algo_params(SceneConfig& cfg, const UiStrings& S) {
             cfg.coloring_mode = modes[cm];
         tip(S.tooltip("coloring_mode"));
 
-        if (a == "julia" || a == "burning_ship") {
+        if (a == "julia") {
             float cr = static_cast<float>(cfg.julia_cr);
             float ci = static_cast<float>(cfg.julia_ci);
             if (ImGui::SliderFloat(S.label("julia_cr"), &cr, -2.f, 2.f)) cfg.julia_cr = cr;
@@ -470,7 +470,7 @@ static void draw_algo_params(SceneConfig& cfg, const UiStrings& S) {
         tip(S.tooltip("lyapunov_iterations"));
     }
 
-    if (a == "cca") {
+    if (a == "cyclic_ca") {
         ImGui::SliderInt(S.label("cca_states"), &cfg.cca_states, 2, 32);
         tip(S.tooltip("cca_states"));
         ImGui::SliderInt(S.label("cca_steps"), &cfg.cca_steps, 50, 2000);
@@ -673,7 +673,7 @@ int run() {
     SDL_Texture* preview_tex  = nullptr;
     SDL_Texture* pal_tex      = nullptr;
     bool         pal_dirty    = true;
-    bool         tex_pending  = false;  // new result waiting to be uploaded
+    std::atomic<bool> tex_pending{false};  // new result waiting to be uploaded
     std::string  save_path;
     std::string  quality_warn;
 
@@ -710,14 +710,14 @@ int run() {
         }
 
         // Upload render result when ready
-        if (tex_pending) {
+        if (tex_pending.load()) {
             std::lock_guard<std::mutex> lk(job.result_mtx);
             if (job.result) {
                 preview_tex = upload_to_texture(ren, preview_tex, *job.result);
                 quality_warn = quality_check(*job.result);
                 pan_x = 0; pan_y = 0; zoom = 1;
             }
-            tex_pending = false;
+            tex_pending.store(false);
             status_msg  = job.status_msg;
         }
 
@@ -824,9 +824,13 @@ int run() {
             std::string p = save_file_dialog("JSON Files\0*.json\0", "json");
             if (!p.empty()) {
                 try {
-                    artgen::save_settings_json(cfg,
-                        p.substr(0, p.rfind('.')));
-                    status_msg = "Saved: " + p;
+                    std::filesystem::path scene_path(p);
+                    std::string stem = scene_path.stem().string();
+                    if (stem.empty()) stem = scene_path.filename().string();
+                    std::filesystem::path saved_path =
+                        std::filesystem::path("ImageSettings") / (stem + ".json");
+                    artgen::save_settings_json(cfg, stem);
+                    status_msg = "Saved: " + saved_path.string();
                 } catch (const std::exception& e) {
                     status_msg = std::string("Save error: ") + e.what();
                 }
@@ -923,17 +927,19 @@ int run() {
 
                         double elapsed = std::chrono::duration<double>(
                             std::chrono::steady_clock::now() - t0).count();
-                        job.status_msg = "Render: " + std::to_string(elapsed).substr(0, 4) + "s";
 
                         {
                             std::lock_guard<std::mutex> lk(job.result_mtx);
+                            job.status_msg =
+                                "Render: " + std::to_string(elapsed).substr(0, 4) + "s";
                             job.result = std::move(buf);
                         }
                     } catch (const std::exception& e) {
+                        std::lock_guard<std::mutex> lk(job.result_mtx);
                         job.status_msg = std::string("Error: ") + e.what();
                     }
                     job.running.store(false);
-                    tex_pending = true;
+                    tex_pending.store(true);
                 });
                 status_msg = "Rendering...";
             }
@@ -972,7 +978,9 @@ int run() {
                                 PngWriter::write(*job.result, p);
                             // Also save a full-res render stem to ImageSettings
                             auto stem = make_output_stem(cfg.algorithm_name);
-                            save_settings_json(cfg, stem);
+                            SceneConfig saved_cfg = cfg;
+                            saved_cfg.output_path = p;
+                            save_settings_json(saved_cfg, stem);
                             status_msg = "Saved: " + p;
                         } catch (const std::exception& e) {
                             status_msg = std::string("Save error: ") + e.what();

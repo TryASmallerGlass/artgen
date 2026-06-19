@@ -116,6 +116,7 @@ void TileRenderer::render(IAlgorithm& algo, PixelBuffer& buf,
                            const Viewport& vp) const {
     // Algorithms with global spatial state must run as one pass
     if (!algo.is_tileable()) {
+        if (cancel_flag && cancel_flag->load(std::memory_order_relaxed)) return;
         algo.render(buf, vp);
         if (progress_cb) progress_cb(1, 1);
         return;

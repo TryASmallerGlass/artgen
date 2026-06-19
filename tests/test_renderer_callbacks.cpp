@@ -21,6 +21,7 @@ TEST_CASE("TileRenderer progress_cb is called during tileable render", "[rendere
     PixelBuffer buf(32, 32);
     TileRenderer ren;
     ren.show_progress = false;
+    ren.thread_count  = 1;
 
     int call_count = 0;
     int last_done = 0;
@@ -74,6 +75,7 @@ TEST_CASE("TileRenderer cancel_flag stops render early", "[renderer][callbacks]"
     Viewport vp = make_vp(256, 256);
     TileRenderer ren;
     ren.show_progress = false;
+    ren.thread_count  = 1;
     ren.tile_size     = 32;  // 8×8 = 64 tiles
 
     std::atomic<bool> cancel{false};
