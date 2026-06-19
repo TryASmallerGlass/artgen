@@ -144,7 +144,62 @@ shape with jagged, flame-like boundaries.
 ```
 
 The interesting detail sits in the lower half of the complex plane; the viewport
-above is flipped compared to Mandelbrot convention.
+above is flipped compared to Mandelbrot convention. This flip is **not automatic** —
+`BurningShipAlgorithm` is a thin override of the shared escape-time `iterate()` (it
+adds `abs()` before squaring and nothing else); every other field (`max_iterations`,
+`escape_radius`, `smooth_coloring`, `coloring_mode`, `color_cycle`, `palette`) and the
+entire render/coloring pipeline are identical to Mandelbrot's. Burning Ship has **no
+parameters of its own** — if a viewport isn't explicitly set with a negative-leaning
+`imag_min`/`imag_max`, you get the (mostly featureless) mirror image above the real
+axis instead of the ship.
+
+**Shape and zoom behaviour:** the silhouette is one tall, asymmetric "hull" with a
+jagged, flame-like fringe of filaments running along its upper-left edge (visible in
+`scenes/burning_ship.json` and `ship_1.json`, full view `real ∈ [-2.5,1.5]`,
+`imag ∈ [-2.0,0.5]`). Zooming into the fringe — rather than the hull itself — is where
+the detail lives: `ship_2`/`ship_3`/`ship_6`/`ship_8` all zoom progressively into the
+band around `real ∈ [-1.9,-1.6]`, `imag ∈ [-0.1,0.05]` (the "mast" region, just above
+the main hull) and reveal a forest of thin, vertical, flame-like spires — visually
+distinct from Mandelbrot's self-similar spirals or Julia's connected filaments.
+Burning Ship's filaments are sparser and more spike-like, with large flat (in-set or
+fast-escape) regions between them, so deep zooms need both a higher `max_iterations`
+(`ship_8` uses 5000 at its tightest crop, `0.01`-wide) and patience — empty-looking
+crops are common if the zoom target drifts even slightly off a spire.
+
+> **⚠ `coloring_mode` interacts badly with this shape at low iteration counts**
+>
+> `histogram_eq` and `orbit_trap` are generic escape-time coloring modes (shared with
+> every other algorithm in this family) that map distance-to-escape into a colour
+> banding. On Burning Ship's mostly-flat, low-detail exterior they produce dense
+> **moiré/interference ring patterns** radiating from the hull rather than a clean
+> background — visible in `ship_4.png` (`histogram_eq`, rainbow stops) and
+> `ship_5.png` (`orbit_trap`, complementary palette), both rendered at the default
+> `color_cycle: 64.0`. This isn't a bug — both modes are remapping a fine, smoothly
+> varying scalar field, and rendering it at typical iteration counts creates banding
+> that reads as concentric rings — but it is a strong visual departure from `"smooth"`
+> coloring's clean flame-fringe look (`ship_1`–`ship_3`, `ship_6`–`ship_9`, all default
+> mode). If you want the rings, keep them; if you want the classic look, leave
+> `coloring_mode` unset (defaults to smooth) or set it explicitly to `"smooth"`.
+
+> **⚠ Unrecognized `coloring_mode` values fail silently**
+>
+> `AlgorithmRegistry`'s mode parser only recognizes the literal strings
+> `"histogram_eq"` and `"orbit_trap"` — anything else, including typos or
+> not-yet-implemented modes like `"distance_est"` (seen in one saved render config),
+> silently falls back to `"smooth"` with no warning. Double-check the spelling if a
+> render doesn't show the coloring you expect.
+
+**Known interesting regions** (from existing scenes, all `real_min/real_max,
+imag_min/imag_max`):
+
+| Region | Coordinates | Notes |
+|---|---|---|
+| Full ship | `-2.5,1.5 / -2.0,0.5` | Whole hull + fringe, `max_iterations: 800–1500` is enough |
+| Mast overview | `-1.85,-1.55 / -0.1,0.08` | `ship_2`, `max_iterations: 2000` |
+| Mast, tighter | `-1.80,-1.65 / -0.09,0.03` | `ship_6`; same target as the worked example in `docs/config-reference.md` |
+| Mast, deep | `-1.72,-1.60 / -0.02,0.05` | `ship_3`, `max_iterations: 3000` |
+| Mast, extreme | `-1.755,-1.745 / -0.033,-0.023` | `ship_8`, `max_iterations: 5000` — narrowest tested crop (0.01 real units wide) |
+| Lower-hull detail | `-0.4,0.2 / -1.8,-1.2` | `ship_9`, square 1080×1080 framing |
 
 ---
 
@@ -386,6 +441,53 @@ log-normalised density is mapped through the palette.
 > If the output is near-black, try widening the viewport first (e.g. to ±4 in both axes)
 > before changing parameters — occasionally the attractor is simply located outside the
 > default ±3 viewport.
+
+**Determinism:** the orbit always starts at the fixed point `(x=0.5, y=0.0)` — there is no
+seed parameter and no randomness anywhere in the pipeline. The same `(type, a, b, c, d,
+iterations)` always produces a pixel-identical histogram; only the palette/coloring can
+change between renders of the same shape. `warmup` (1000 discard steps before recording
+starts) is also fixed and not exposed in `SceneConfig`.
+
+**Note on `attractor_type`:** despite the field comment listing `"clifford" | "dejong" |
+"ikeda"`, setting `attractor_type: "ikeda"` under `"algorithm": "attractor"` has no effect
+— Ikeda is only reachable through the separate top-level `"algorithm": "ikeda"` key
+documented below. The `attractor_type` combo only ever toggles Clifford/De Jong.
+
+### Empirical observations from the gallery (`scenes/attr_1.json`–`attr_10.json`)
+
+All ten scenes share viewport `[-3,3]×[-3,3]`, `1080×1080`, 8M iterations, and differ only
+in `attractor_type`, `a/b/c/d`, and palette. Renders confirm two visually distinct families:
+
+| Scene | Type | a, b, c, d | Observed shape |
+|---|---|---|---|
+| `attr_1` | clifford | −1.4, 1.6, 1.0, 0.7 (the textbook default) | Symmetric double-lobe "crab claw" — two curled horns meeting at a dense braided centre |
+| `attr_2` | clifford | −1.7, 1.8, −1.9, −0.4 | Two large interlocking rings (a torus-like braid), thin and evenly spread — fills the canvas well |
+| `attr_3` | clifford | 1.5, −1.8, 1.6, 0.9 | Dense, rounded "cloud" of overlapping loops with no empty interior — almost fills its bounding circle |
+| `attr_4` | dejong | 1.4, −2.3, 2.4, −2.1 | Single smooth heart/kidney-shaped lobe — De Jong's characteristic soft, non-filamentary fill |
+| `attr_5` | dejong | −2.0, −2.0, −1.2, 2.0 | Comma/crescent shape with a tightly wound inner spiral core |
+| `attr_6` | clifford | 2.0, −2.0, 0.5, −1.0 | Vertically-stacked figure-eight inside a circular outer boundary |
+| `attr_7` | clifford | −1.3, −1.3, −1.8, −1.9 | Dense circular "ball of yarn" — most isotropic/symmetric of the Clifford set |
+| `attr_8` | dejong | −0.9, 2.0, 0.5, −1.6 | Small, off-centre lobe occupying roughly 15% of the canvas — see framing note below |
+| `attr_9` | dejong | 1.9, 1.9, 0.8, −1.5 | Open, thread-like "koi fish" silhouette with long trailing tendrils and large empty regions |
+| `attr_10` | clifford | −1.9, 0.5, −1.0, 2.0 | **Degenerate** — matches the documented `\|b\|<1.0`/`\|d\|>1.5` failure case above; near-black |
+
+Two practical patterns emerge from this set:
+
+- **Clifford tends to fill the frame; De Jong tends to wander.** Every Clifford scene here
+  (`attr_1/2/3/6/7`, all with default-scale `a–d`) produced a shape that uses most of the
+  `±3` viewport. De Jong scenes were inconsistent: `attr_4`/`attr_5` filled the frame, but
+  `attr_9` left large empty margins and `attr_8` rendered a shape covering only a small
+  corner of the 1080×1080 canvas (confirmed by its PNG file size — ~125 KB vs 600 KB–1.5 MB
+  for the fuller renders, since a sparser histogram compresses much better as PNG). If a
+  De Jong render looks tiny or off-centre rather than blank, the orbit is *not* degenerate —
+  it is just smaller than the viewport. Tightening the viewport range (rather than widening
+  it, the opposite of the blank-image fix above) will frame it properly.
+- **File size is a cheap density proxy.** Because the renderer writes plain (non-paletted)
+  PNG, sparser/smaller orbits compress far better than dense ones. A render under roughly
+  150 KB at 1080×1080 with the default palettes is a strong signal to inspect the image
+  before batch-committing to a parameter set — it usually means either a tiny/off-frame
+  orbit (raise viewport scale check) or a near-degenerate one (re-check the warning ranges
+  above), not a render worth keeping as-is.
 
 **Not tileable** — the full orbit must be accumulated globally.
 

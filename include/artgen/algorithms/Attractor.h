@@ -25,7 +25,7 @@ public:
     AttractorType type       = AttractorType::Clifford;
     double a = -1.4, b = 1.6, c = 1.0, d = 0.7;
     double u = 0.9;   // Ikeda: tuning parameter (chaotic for u ≈ 0.9)
-    int    iterations = 5'000'000;
+    int    iterations = 8'000'000;
     int    warmup     = 1000;
     Palette palette;
 

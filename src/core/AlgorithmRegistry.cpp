@@ -36,8 +36,13 @@ static std::once_flag s_flag;
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 static ColoringMode parse_mode(const std::string& s) {
-    if (s == "histogram_eq") return ColoringMode::HistogramEq;
-    if (s == "orbit_trap")   return ColoringMode::OrbitTrap;
+    if (s.empty() || s == "smooth") return ColoringMode::Smooth;
+    if (s == "histogram_eq")        return ColoringMode::HistogramEq;
+    if (s == "orbit_trap")          return ColoringMode::OrbitTrap;
+    std::fprintf(stderr,
+        "Warning: unrecognized coloring_mode \"%s\" — falling back to \"smooth\". "
+        "Valid values: \"smooth\", \"histogram_eq\", \"orbit_trap\".\n",
+        s.c_str());
     return ColoringMode::Smooth;
 }
 
