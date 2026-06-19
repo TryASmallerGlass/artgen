@@ -69,6 +69,32 @@ their iteration count.
 | `"histogram_eq"` | Two-pass histogram equalisation — maximises contrast across the whole image |
 | `"orbit_trap"` | Colour by minimum `|z|` seen during iteration — reveals fine detail near the boundary |
 
+> **⚠ Deep-zoom blank image warning**
+>
+> At extreme zoom depths the iteration cap is the most common cause of a completely
+> black output.  For a viewport whose real (or imag) axis spans a range of **R** units,
+> a rough minimum iteration count is:
+>
+> ```
+> max_iterations ≥ max(2000,  round(500 / sqrt(R)))
+> ```
+>
+> | Viewport range R | Minimum `max_iterations` |
+> |---|---|
+> | 1.0 (shallow zoom) | 2 000 |
+> | 0.1 | 2 000 |
+> | 0.01 | 5 000 |
+> | 0.001 | 16 000 |
+> | 1×10⁻⁴ | 50 000 |
+> | 1×10⁻⁶ | 500 000 |
+>
+> A black output at deep zoom has two possible causes:
+> 1. **Too few iterations** — increase `max_iterations` substantially (10× is often needed).
+> 2. **Viewport is inside the set** — the target coordinate may lie in a solid black region
+>    of the Mandelbrot set itself.  Verify the coordinate sits on a filament or boundary
+>    feature before committing to a deep zoom.  A quick sanity check: render the full set
+>    first with a crosshair overlay at the target coordinate.
+
 ---
 
 ## Julia Set
@@ -222,6 +248,32 @@ smooth escape time via the palette.
 
 Tileable — each pixel is independent.
 
+> **⚠ Flat / blank image warning**
+>
+> Two failure modes specific to Nova:
+>
+> **1. Flat uniform colour (Nova Julia mode)**
+> When `nova_type = "julia"`, the choice of seed (nova_seed_r, nova_seed_i) can cause
+> all starting points in the viewport to converge to the same Newton basin, producing a
+> single-hue flat image.  This occurs when:
+> - The seed magnitude `|c| = sqrt(nova_seed_r² + nova_seed_i²)` is small (< 0.5) —
+>   the Newton correction dominates and overrides all initial-position information.
+> - The failing example was `(nova_seed_r=0.4, nova_seed_i=-0.6)` with `nova_power=4`,
+>   giving `|c| ≈ 0.72` — borderline small, and the seed happened to sit in a direction
+>   that collapsed all basins into one.
+>
+> **Safe seed selection for Julia mode:**
+> - Choose seeds with `|c| ∈ [0.8, 2.5]` for the most varied basin structure.
+> - Seeds offset in the direction of one of the roots of z^n = 1
+>   (i.e. `nova_seed_r = cos(2πk/n)`, `nova_seed_i = sin(2πk/n)` for integer k)
+>   reliably break basin symmetry.
+> - If the image is flat, try rotating the seed by 45° or increasing `|c|` by 0.3–0.5.
+>
+> **2. Near-black (Nova Mandelbrot or Julia mode)**
+> - `nova_power < 2` — the polynomial z^p − 1 has no root structure below degree 2.
+> - `nova_type = "julia"` with `nova_max_iterations < 128` — most pixels exhaust the
+>   cap without converging; increase to 512+ for Julia mode.
+
 > **Render time note:** Julia mode (`nova_type = "julia"`) is significantly slower
 > than Mandelbrot mode.  Because _z₀_ varies per pixel and can start far from all
 > roots, many pixels run all the way to `nova_max_iterations` before escaping.
@@ -311,6 +363,29 @@ log-normalised density is mapped through the palette.
 |---|---|
 | `"clifford"` | x′ = sin(ay) + c·cos(ax),  y′ = sin(bx) + d·cos(by) |
 | `"dejong"` | x′ = sin(ay) − cos(bx),  y′ = sin(cx) − cos(dy) |
+
+> **⚠ Blank image warning — degenerate parameter combinations**
+>
+> Not every combination of (a, b, c, d) produces a strange attractor.  Some combinations
+> cause the orbit to collapse onto a fixed point or a small periodic cycle; the density
+> histogram is then effectively empty and the output is near-black.
+>
+> **Clifford attractor** — empirically problematic patterns:
+> - `|b| < 1.0` combined with `|d| > 1.5` — the y-component has weak coupling in but
+>   strong self-feedback, causing rapid orbit collapse.  The failing example was
+>   `a=-1.9, b=0.5, c=-1.0, d=2.0`.
+> - Any single parameter with magnitude > 2.4 while the others are small (< 0.5).
+>
+> **Reliable ranges** (based on the existing working scenes):
+> - All four parameters in **[−2.0, 2.0]**, with at least three of them having |value| > 1.0.
+> - If `|b| < 1.0`, keep `|d| ≤ 1.2` to maintain y-channel mixing.
+>
+> **De Jong attractor** — more tolerant; most combinations in [−3, 3] × [−3, 3] produce
+> visible orbits, but values near (a,b,c,d) = (0, 0, 0, 0) produce a degenerate orbit.
+>
+> If the output is near-black, try widening the viewport first (e.g. to ±4 in both axes)
+> before changing parameters — occasionally the attractor is simply located outside the
+> default ±3 viewport.
 
 **Not tileable** — the full orbit must be accumulated globally.
 

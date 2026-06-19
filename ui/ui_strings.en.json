@@ -1,0 +1,366 @@
+{
+  "_meta": { "language": "English", "flag": "gb" },
+
+  "algorithms": {
+    "mandelbrot":         { "label": "Mandelbrot Set",             "tooltip": "The classic escape-time fractal: iterates z → z² + c from z = 0 until |z| escapes or max iterations is reached.\n\nEach pixel colour encodes how quickly its coordinate escaped. Points that never escape form the black interior of the set.\n\nInfinite detail exists at every scale — zoom in anywhere on the boundary for new structure." },
+    "julia":              { "label": "Julia Set",                  "tooltip": "Like Mandelbrot but the seed c is fixed globally; the pixel coordinate is the starting z₀.\n\nEvery point on the Mandelbrot boundary generates a distinct Julia set — points deep inside give filled discs, points outside give dust.\n\nAdjust Cr and Ci to explore completely different shapes." },
+    "burning_ship":       { "label": "Burning Ship",               "tooltip": "Escape-time fractal using the recurrence z → (|Re(z)| + i|Im(z)|)² + c. Taking the absolute value of both components before squaring breaks the rotational symmetry of Mandelbrot, producing jagged ship-like structures.\n\nMost interesting detail is in the lower part of the set — try real ∈ [−1.8, −1.7], imag ∈ [−0.09, 0.01]." },
+    "multibrot":          { "label": "Multibrot",                  "tooltip": "Generalises the Mandelbrot recurrence to z → zⁿ + c for any real exponent n.\n\nn = 2 reproduces Mandelbrot exactly. n = 3 produces a two-lobed shape with 3-fold symmetry. Higher n add more lobes (n−1 bulbs). Non-integer values produce intermediate shapes with partial symmetry." },
+    "tricorn":            { "label": "Tricorn (Mandelbar)",         "tooltip": "Uses the conjugate recurrence z → z̄² + c. The complex conjugate (flipping the imaginary sign) prevents the attractor from being holomorphic, producing a fractal with 3-fold symmetry and sharper, more angular features than Mandelbrot.\n\nAlso called the 'Mandelbar set'." },
+    "newton":             { "label": "Newton Fractal",             "tooltip": "Applies Newton's root-finding method — z → z − f(z)/f′(z) — to the polynomial zⁿ − 1.\n\nEach pixel is coloured by which root it converges to (hue) and how many steps it took (brightness). Boundaries between basins of attraction are fractal.\n\nPower 3 gives three basins; power 4 gives four, arranged in a cross." },
+    "nova":               { "label": "Nova Fractal",               "tooltip": "Extends Newton's method by adding a relaxation parameter R and an additive constant c:\n  z → z − R · f(z)/f′(z) + c\n\nIn Mandelbrot mode c = pixel, z₀ = 1 — produces a parameter-space map similar to Mandelbrot.\nIn Julia mode z₀ = pixel, c = fixed seed — produces a specific fractal basin.\n\n⚠ Julia mode needs max_iterations ≥ 512 or images will be near-black." },
+    "noise":              { "label": "Simplex Noise FBM",          "tooltip": "Fractal Brownian Motion: sums multiple octaves of simplex noise, each half the amplitude and twice the frequency of the last.\n\nProduces smooth organic textures — clouds, terrain, marble, wood grain — depending on the octave and persistence settings.\n\nThe seed controls the permutation table; different seeds give entirely different patterns." },
+    "reaction_diffusion": { "label": "Reaction-Diffusion",         "tooltip": "Simulates the Gray-Scott model: two chemicals U and V diffuse at different rates and react (U + 2V → 3V; V → P).\n\nThe feed rate F replenishes U; the kill rate k removes V. Different (F, k) pairs produce qualitatively different patterns: spots, stripes, labyrinths, worms, and coral branches.\n\nPatterns emerge from a random perturbation and self-organise over hundreds of simulation steps." },
+    "plasma":             { "label": "Plasma (Diamond-Square)",    "tooltip": "Recursive midpoint displacement algorithm that generates smooth fractal height fields.\n\nStarts with a 2^n + 1 grid, displaces each midpoint by a random amount scaled by roughness, then halves the displacement for each subdivision.\n\nAlways produces visible, colourful output — good for backgrounds and testing palette settings." },
+    "attractor":          { "label": "Strange Attractor",          "tooltip": "Iterates a 2D map (Clifford or De Jong) millions of times and accumulates a density histogram of visited points.\n\nClifford:  x′ = sin(ay) + c·cos(ax),  y′ = sin(bx) + d·cos(by)\nDe Jong:   x′ = sin(ay) − cos(bx),    y′ = sin(cx) − cos(dy)\n\nBrighter pixels = orbit visited that region more often. Parameters a–d control the shape completely.\n⚠ Certain parameter combinations collapse the orbit — see boundary warnings on a, b, c, d." },
+    "ikeda":              { "label": "Ikeda Map",                  "tooltip": "Models light bouncing inside a laser cavity with nonlinearity u:\n  tₙ = 0.4 − 6/(1 + x² + y²)\n  x′ = 1 + u(x·cos t − y·sin t)\n  y′ = u(x·sin t + y·cos t)\n\nFor u > 0.6 the attractor becomes chaotic, producing layered ribbon structures. The ribbons fold and thicken as u increases toward 1.\n⚠ u < 0.75 produces periodic (non-chaotic) orbits — the image will be near-black." },
+    "voronoi":            { "label": "Voronoi Diagram",            "tooltip": "Partitions the plane by assigning each pixel to its nearest seed point. Three colouring modes and three distance metrics produce 9 distinct visual styles.\n\nCells mode: each region filled with a palette colour.\nDistance mode: brightness = distance to nearest seed (reveals smooth gradients).\nEdge mode: only cell boundaries drawn — produces a thin wireframe." },
+    "lsystem":            { "label": "L-System",                   "tooltip": "Lindenmayer string-rewriting system rendered as turtle graphics.\n\nStarting from an axiom string, production rules are applied n times. The resulting string is interpreted as turtle commands: F=forward, +=turn left, −=turn right, [=push, ]=pop.\n\nBuilt-in presets include plants, space-filling curves, and fractal polygons.\n⚠ Each iteration multiplies the string length — iterations above 8 can be very slow." },
+    "lyapunov":           { "label": "Lyapunov Fractal",           "tooltip": "Colours each pixel (a, b) by the Lyapunov exponent λ of a logistic map driven by a sequence of 'A' and 'B' characters — A uses coordinate a, B uses coordinate b.\n\nλ < 0 (stable/periodic) → blue tones.  λ > 0 (chaotic) → red/yellow tones.\n\n⚠ Both coordinates must stay strictly within (2, 4). Outside this range the logistic map diverges and the image is black." },
+    "cca":                { "label": "Cyclic Cellular Automaton",  "tooltip": "Each cell advances to the next state (mod N) when it can see at least one neighbour already in that next state.\n\nFrom a random start, rotating spiral waves spontaneously form and propagate. More states → slower, more complex spirals. Moore neighbourhood (8-cell) gives rounder spirals; Von Neumann (4-cell) gives squarer ones." },
+    "physarum":           { "label": "Physarum (Slime Mould)",     "tooltip": "Simulates Physarum polycephalum agents that deposit, sense, and follow chemical trails.\n\nEach agent moves forward, deposits trail chemical, then rotates toward the strongest signal from three forward sensors. Trail diffuses and decays each step.\n\nThe emergent network spontaneously finds near-optimal paths between food sources — similar to biological slime mould solving maze problems." }
+  },
+
+  "params": {
+    "max_iterations": {
+      "label": "Max Iterations",
+      "tooltip": "Caps how many times the recurrence is applied before declaring a point 'in the set'.\n\nEffect: Higher = more detail visible in thin boundary regions and at deep zoom levels, but proportionally slower renders.\n\nGuideline: For a viewport of width R complex units, you need at least max(2000, 500 / √R) iterations or boundary regions will be incorrectly coloured black.\n\n⚠ At R < 1 × 10⁻⁶ you need 500 000+ iterations — enable quick render first to estimate."
+    },
+    "escape_radius": {
+      "label": "Escape Radius",
+      "tooltip": "Magnitude threshold — once |z| exceeds this value the point is declared escaped.\n\nEffect: The mathematically exact value is 2.0 for Mandelbrot/Julia. Larger values improve the accuracy of smooth (continuous) colouring because the iteration-fraction formula relies on log(|z|), which is more accurate far from the origin.\n\nValues above 100 give diminishing returns. Values below 2.0 will incorrectly colour some escaped points as in-set."
+    },
+    "smooth_coloring": {
+      "label": "Smooth Colouring",
+      "tooltip": "Applies the Linas Vepstas escape-count fraction to remove discrete colour banding.\n\nEnabled: iteration count is a smooth real number derived from log(log(|z|)) — no staircase visible at any zoom.\nDisabled: each step maps to a distinct palette index — produces the classic 'staircase' appearance.\n\nSmooth colouring requires escape_radius ≥ 2.0 to work correctly."
+    },
+    "color_cycle": {
+      "label": "Colour Cycle",
+      "tooltip": "Controls how many times the palette repeats across the full iteration range.\n\nLow values (4–16): broad colour washes, few bands visible.\nMedium (32–64): balanced detail — recommended starting point.\nHigh (128–256): very tight, fine colour bands — detail only visible at high zoom levels.\n\nEffect is multiplicative with the palette phase offset."
+    },
+    "coloring_mode": {
+      "label": "Colouring Mode",
+      "tooltip": "Determines how iteration counts are mapped to palette positions.\n\nsmooth — Direct mapping of normalised escape count. Fast, predictable.\nhistogram_eq — Redistributes colours so equal fractions of pixels get each palette position. Reveals structure in areas where iterations cluster.\norbit_trap — Colours by the minimum distance the orbit passed to the origin (0, 0). Produces very different aesthetics — try with a bold palette.\n\nHistogram mode requires a full render pass to collect statistics."
+    },
+    "julia_cr": {
+      "label": "Seed Cr (real)",
+      "tooltip": "Real part of the fixed complex seed c used as the additive constant.\n\nEffect: Together with Ci, completely determines the Julia set's topology. Points close to the Mandelbrot boundary produce the most intricate connected sets; points outside produce disconnected dust.\n\nTry: Cr = −0.7, Ci = 0.27015 (classic spiral); Cr = 0.285, Ci = 0.01 (dense dendrite); Cr = −0.4, Ci = 0.6 (Dragon of Eve)."
+    },
+    "julia_ci": {
+      "label": "Seed Ci (imaginary)",
+      "tooltip": "Imaginary part of the fixed complex seed c.\n\nAdjust in small increments — a change of 0.01 can transform a connected set into dust. The Julia set is symmetric under z → −z, so (Cr, Ci) and (Cr, −Ci) give mirror images.\n\nSee julia_cr tooltip for interesting starting values."
+    },
+    "multibrot_power": {
+      "label": "Exponent",
+      "tooltip": "Exponent n in the recurrence z → zⁿ + c.\n\nn = 2: standard Mandelbrot (one main bulb, bilateral symmetry).\nn = 3: two-lobed shape with 3-fold rotational symmetry.\nn = 4: three-lobed, 4-fold symmetry.\nNon-integer values (e.g. 2.5) produce partial symmetry and intermediate shapes.\n\nHigher powers shrink the main cardioid and increase the number of satellite bulbs."
+    },
+    "newton_power": {
+      "label": "Polynomial Degree",
+      "tooltip": "Degree of f(z) = zⁿ − 1, whose n roots Newton's method seeks.\n\nMust be ≥ 2 (degree 1 has only one root — no basin boundaries exist).\n\nEffect: Determines number of distinct colour regions (basins). n = 3 gives three regions in a trefoil arrangement; n = 4 gives four in a cross; n = 8 produces eight fine interlocking regions.\n\nHigher degrees produce increasingly fine detail near the basin boundaries."
+    },
+    "newton_saturation": {
+      "label": "Basin Saturation",
+      "tooltip": "Saturation of the hue assigned to each root basin.\n\n0.0: Greyscale only — brightness encodes convergence speed, colour encodes nothing. Produces an ethereal monochrome result.\n0.5: Soft pastel basins with convergence shading.\n1.0: Fully saturated, vivid basin colours.\n\nThe convergence speed (brightness) channel is unaffected by this setting."
+    },
+    "nova_type": {
+      "label": "Nova Type",
+      "tooltip": "Controls which variable is the pixel coordinate.\n\nmandelbrot: z₀ = 1, c = pixel. Maps the parameter space — similar to Mandelbrot in character, showing how the fractal changes across c values.\njulia: z₀ = pixel, c = fixed seed. Shows a specific fractal basin for one value of c.\n\n⚠ Julia mode needs max_iterations ≥ 512. The default 256 leaves most pixels unconverged and the image appears near-black."
+    },
+    "nova_power": {
+      "label": "Nova Power",
+      "tooltip": "Polynomial degree for the underlying Newton step in the Nova iteration.\n\nMust be ≥ 2. Power 1 has only one root — no basin structure exists and the image is blank.\n\nEffect: Determines the number of root basins (same as Newton fractal). Higher powers create more colour regions and more intricate basin boundaries."
+    },
+    "nova_relaxation": {
+      "label": "Relaxation R",
+      "tooltip": "Step-size multiplier applied to the Newton correction:\n  z → z − R · f(z)/f′(z) + c\n\nR = 1.0: Standard Newton step (fastest convergence, least interesting).\nR ≠ 1.0: Introduces over- or under-relaxation, generating secondary fractal structure along basin edges.\n\nTry values around 0.5, 1.5, 2.0 — each produces qualitatively different boundary decoration."
+    },
+    "nova_max_iterations": {
+      "label": "Max Iterations",
+      "tooltip": "Per-pixel cap on the number of Newton steps before declaring non-convergence.\n\n⚠ Julia mode: use ≥ 512. The Nova Julia set has slower-converging orbits than Mandelbrot mode — 256 (the default) often leaves most of the image unconverged and near-black.\n\nMandelbrot mode: 256 is usually sufficient."
+    },
+    "nova_seed_r": {
+      "label": "Seed r (real)",
+      "tooltip": "Real part of the fixed additive constant c (Julia mode only).\n\n⚠ Magnitude warning: keep |c| = √(r² + i²) between 0.8 and 2.5.\n• |c| < 0.8: The Newton correction dominates — all pixels collapse to one basin → flat single-colour image.\n• |c| > 2.5: Most pixels escape immediately → blank or near-black image.\n\nThe sweet spot is |c| ≈ 1.0–1.8 for the most varied basin structure."
+    },
+    "nova_seed_i": {
+      "label": "Seed i (imaginary)",
+      "tooltip": "Imaginary part of the fixed additive constant c (Julia mode only).\n\n⚠ See nova_seed_r — keep |c| = √(r² + i²) between 0.8 and 2.5.\n\nChanging only i while holding r fixed rotates the basin pattern around the origin."
+    },
+    "noise_octaves": {
+      "label": "Octaves",
+      "tooltip": "Number of noise layers (octaves) summed to build the FBM signal.\n\nEach octave doubles the frequency and scales amplitude by persistence.\n\n1–2: Smooth blob-like patterns, no fine detail.\n4–6: Natural terrain or cloud appearance. Good balance.\n8–10: Very fine grain detail — slow to render and visible only at large image sizes.\n12: Maximum — negligible visual difference from 10 on most images.\n\nRender time scales linearly with octave count."
+    },
+    "noise_persistence": {
+      "label": "Persistence",
+      "tooltip": "Amplitude multiplier applied to each successive octave (0–1).\n\n0.2–0.3: High-frequency layers are very faint — smooth, gently rolling result.\n0.5: Standard FBM — each octave is half the amplitude of the last.\n0.7–0.9: High-frequency layers retain most amplitude — rough, spiky, turbulent result.\n1.0: All octaves equal amplitude — maximum roughness.\n\n⚠ Values above 0.95 can cause clipping artefacts."
+    },
+    "noise_lacunarity": {
+      "label": "Lacunarity",
+      "tooltip": "Frequency multiplier applied to each successive octave.\n\n2.0: Standard lacunarity — each octave is twice as fine as the last (octaves of 1, 2, 4, 8… cycles).\n1.5: Gentler progression — less frequency contrast between layers.\n3.0–4.0: Rapid frequency growth — fine detail appears after only a few octaves.\n\nChanging lacunarity has a subtle effect compared to persistence; it mainly affects the 'grain size' spacing."
+    },
+    "noise_scale": {
+      "label": "Scale",
+      "tooltip": "Global zoom applied to the noise field before evaluating.\n\nLow (0.1–0.5): Large, slow-varying features fill the image — good for subtle backgrounds.\n1.0: Default — one full noise period fits roughly within the viewport.\nHigh (5–10): Many fine noise repetitions — texture-like appearance.\n\nInteracts with viewport size — the same scale value produces different apparent feature sizes at different viewport extents."
+    },
+    "noise_seed": {
+      "label": "Seed",
+      "tooltip": "Integer seed for the simplex noise permutation table.\n\nDifferent seeds produce completely independent noise patterns — same structure, different spatial arrangement. Use to find a layout you like while keeping all other parameters fixed.\n\nRange 0–9999 covers all meaningfully different permutations for this implementation."
+    },
+    "rd_preset": {
+      "label": "Preset",
+      "tooltip": "Named Gray-Scott (F, k) parameter pairs known to produce stable patterns:\n\ncoral       F=0.0545, k=0.062 — branching coral-like filaments\nmitosis     F=0.036,  k=0.099 — dividing oval spots\nworms       F=0.078,  k=0.061 — meandering worm trails\nmaze        F=0.029,  k=0.057 — labyrinthine connected walls\nspots       F=0.025,  k=0.060 — stable polka-dot array\nfingerprint F=0.037,  k=0.060 — densely packed parallel ridges\n\nSelecting a preset overwrites the Feed and Kill sliders."
+    },
+    "rd_feed": {
+      "label": "Feed Rate F",
+      "tooltip": "Rate at which chemical U is replenished (overrides preset).\n\nEffect: F controls the overall energy input. Too low → U depletes and patterns die. Too high → pattern never forms.\n\n⚠ Useful range is approximately 0.010 – 0.095. Values outside this range almost always produce a blank image. The exact stable region also depends on k — the two parameters are tightly coupled.\n\nSmall changes (±0.002) can shift between spots, stripes, and labyrinths."
+    },
+    "rd_kill": {
+      "label": "Kill Rate k",
+      "tooltip": "Rate at which chemical V is removed (overrides preset).\n\nEffect: k controls pattern density. Too low → V accumulates uniformly → blank. Too high → V consumed before patterns stabilise → blank.\n\n⚠ Useful range is approximately 0.045 – 0.070. Must be tuned in tandem with F — use the presets as starting points and nudge from there."
+    },
+    "rd_steps": {
+      "label": "Simulation Steps",
+      "tooltip": "Number of Gray-Scott time steps simulated before the image is captured.\n\nFew steps (< 1000): Patterns are still forming — visible noise and incomplete structure.\n4000–6000: Most patterns have stabilised. Good default.\n8000–12000: Slow-forming presets (coral, mitosis) may still be evolving at 6000 — use more steps for a fully developed result.\n20000: Useful for ultra-high-step experiments; diminishing returns beyond stable state.\n\nRender time scales linearly with step count."
+    },
+    "rd_seed": {
+      "label": "Seed",
+      "tooltip": "Random seed for the initial perturbation of the chemical grid.\n\nDifferent seeds produce different spatial arrangements of the same underlying pattern type — same topology, different layout.\n\nUse to find a composition you like without changing the physics parameters."
+    },
+    "plasma_roughness": {
+      "label": "Roughness",
+      "tooltip": "Amplitude scale factor per subdivision level (0–1).\n\n0.0: Perfectly flat gradient — almost no variation after the first pass.\n0.3–0.5: Smooth, natural-looking terrain — rolling hills.\n0.6–0.8: Rough, jagged heightfield — rocky landscape feel.\n1.0: Maximum roughness — chaotic noise-like result.\n\nLow roughness values also produce more gradual palette transitions."
+    },
+    "plasma_octaves": {
+      "label": "Grid Octaves",
+      "tooltip": "Controls the resolution of the underlying grid: resolution = 2^n + 1.\n\n6 → 65×65 grid  (fast, coarse)\n8 → 257×257 grid (default — good balance)\n10 → 1025×1025 grid (fine detail, noticeably slower)\n12 → 4097×4097 grid (very fine, uses significant memory)\n\n⚠ Values above 12 may exhaust memory on 32-bit systems. The grid must be held in RAM during generation."
+    },
+    "plasma_seed": {
+      "label": "Seed",
+      "tooltip": "Random seed for the diamond-square midpoint displacement.\n\nCompletely determines the height field — same seed and roughness always produce the same image. Change the seed to explore different height field layouts with the same roughness character."
+    },
+    "attractor_type": {
+      "label": "Attractor Type",
+      "tooltip": "Selects the 2D iterated map:\n\nClifford — sinusoidal coupling between axes:\n  x′ = sin(a·y) + c·cos(a·x)\n  y′ = sin(b·x) + d·cos(b·y)\nProduces smooth, curved ribbon structures.\n\nDe Jong — similar but different arrangement:\n  x′ = sin(a·y) − cos(b·x)\n  y′ = sin(c·x) − cos(d·y)\nProduces petal-like and folded ribbon structures."
+    },
+    "attractor_a": {
+      "label": "Parameter a",
+      "tooltip": "First shape parameter for the attractor map.\n\nFor Clifford attractors, controls the frequency of sin/cos terms on the y-axis coupling.\n\n⚠ Blank image risk: keep all four parameters (a, b, c, d) within [−2.0, 2.0]. In particular, the combination |b| < 1.0 AND |d| > 1.5 causes orbit collapse — the attractor degenerates to a fixed point outside the viewport and the image is black.\n\nSafe rule: ensure at least 3 of the 4 parameters have |value| > 1.0."
+    },
+    "attractor_b": {
+      "label": "Parameter b",
+      "tooltip": "Second shape parameter for the attractor map.\n\n⚠ Clifford blank-image boundary: |b| < 1.0 combined with |d| > 1.5 causes orbit collapse → black image.\n\nEffect: In Clifford, b controls the sin(bx) frequency on the x-coupling. Values near ±1.5–2.0 produce the most visually complex structures."
+    },
+    "attractor_c": {
+      "label": "Parameter c",
+      "tooltip": "Third shape parameter for the attractor map.\n\nIn Clifford, c is the amplitude of the cos(ax) term on the x-axis. It scales the horizontal 'folding' of the ribbon structure.\n\nEffect: Values near ±1.0 produce layered overlapping bands; values near ±2.0 create tighter, more compact attractors."
+    },
+    "attractor_d": {
+      "label": "Parameter d",
+      "tooltip": "Fourth shape parameter for the attractor map.\n\n⚠ Clifford blank-image boundary: |d| > 1.5 combined with |b| < 1.0 causes orbit collapse → black image.\n\nEffect: In Clifford, d is the amplitude of the cos(by) term on the y-coupling. Strongly influences the overall vertical extent and symmetry of the attractor."
+    },
+    "attractor_iterations": {
+      "label": "Iterations (millions)",
+      "tooltip": "Total number of orbit steps accumulated in the density histogram.\n\nMore iterations = denser fill, smoother appearance, more detail in low-density regions.\n\n1–2 M:  Sparse — structure is clear but regions look grainy.\n5 M:    Good — recommended default, smooth result in most cases.\n10–20 M: High quality — dense fill, smooth gradients, suitable for print.\n\nRender time scales linearly with iteration count."
+    },
+    "ikeda_u": {
+      "label": "Nonlinearity u",
+      "tooltip": "Controls the degree of nonlinearity in the laser-cavity Ikeda map.\n\n< 0.60: Fixed-point attractor — orbit collapses to one point → black image.\n0.60–0.75: Period-doubling cascade — discrete periodic orbit, very sparse density → near-black image.\n0.75–0.85: Onset of chaos — attractor forms but is thin and wispy.\n0.85–0.92: Fully developed chaotic attractor — dense, layered ribbon structure. Best visual results.\n> 0.92: Attractor expands but ribbons can merge and lose detail.\n\n⚠ Values below 0.75 reliably produce blank or near-black output."
+    },
+    "ikeda_iterations": {
+      "label": "Iterations (millions)",
+      "tooltip": "Total orbit length accumulated in the Ikeda density histogram.\n\nBecause the Ikeda attractor has very fine ribbon structure, it needs more iterations than Clifford to appear smooth.\n\n5 M:  Minimum for recognisable structure.\n10 M: Recommended — ribbons are dense and well-defined.\n20 M: High quality — fine ribbon detail is fully resolved."
+    },
+    "voronoi_seeds": {
+      "label": "Seed Points",
+      "tooltip": "Number of Voronoi generator points placed randomly across the canvas.\n\n8–16:   Very large cells — bold, graphic appearance.\n32–64:  Medium cells — good readability of modes and metrics.\n128–256: Small cells — mosaic or stained-glass texture.\n512+:   Very fine — individual cells may be < 5px.\n\nRender time scales roughly linearly with seed count."
+    },
+    "voronoi_mode": {
+      "label": "Colouring Mode",
+      "tooltip": "Determines what each pixel's colour encodes:\n\ncells    — each cell filled with its assigned palette colour. Classic Voronoi diagram.\ndistance — brightness = normalised distance to the nearest seed point. Reveals smooth radial gradients from each generator.\nedge     — only cell boundary pixels are drawn (thin lines); interior is black. Produces a wireframe diagram.\n\nDistance mode in combination with the electric palette produces particularly striking results."
+    },
+    "voronoi_metric": {
+      "label": "Distance Metric",
+      "tooltip": "The distance function used to assign pixels to their nearest seed:\n\neuclidean  — standard straight-line distance. Produces circular regions (standard Voronoi).\nmanhattan  — |Δx| + |Δy|. Produces diamond-shaped regions rotated 45°.\nchebyshev  — max(|Δx|, |Δy|). Produces square regions aligned to the image axes.\n\nThe difference is most visible in distance mode and edge mode."
+    },
+    "voronoi_seed": {
+      "label": "Seed",
+      "tooltip": "Random seed for Voronoi generator point placement.\n\nDifferent seeds produce completely different cell layouts with the same seed count. Use to find a composition you like without changing the number of cells."
+    },
+    "ls_preset": {
+      "label": "L-System Preset",
+      "tooltip": "Named L-System grammars:\n\nplant       — classic Barnsley-style branching plant (angle 25.7°)\ndragon      — Heighway dragon space-filling curve (angle 90°)\nsierpinski  — Sierpiński triangle (angle 60°)\nhilbert     — Hilbert space-filling curve (angle 90°)\ntree        — symmetric binary tree (angle 30°)\n\nSelecting a preset overwrites the axiom, rules, and recommended angle. You can then modify the angle to distort the preset."
+    },
+    "ls_iterations": {
+      "label": "Iterations",
+      "tooltip": "Number of string-rewriting steps applied to the axiom.\n\nEach step expands every symbol in the string using the production rules — string length typically grows exponentially.\n\n1–3:  Visible structure but coarse — good for previewing.\n4–6:  Detailed result for most presets.\n7–8:  Very fine — slow and may exceed draw buffer for complex rules.\n\n⚠ Each extra iteration multiplies the draw-command count by the rule's branching factor. Dragon and Hilbert at 12+ iterations can produce millions of line segments and take minutes."
+    },
+    "ls_angle": {
+      "label": "Turn Angle (°)",
+      "tooltip": "Angle (in degrees) of each left/right turn command (+ and −) executed by the turtle.\n\nThis is the most visually impactful parameter to vary:\n90°: Grid-aligned curves (Hilbert, Dragon).\n60°: Hexagonal / triangular symmetry (Sierpiński).\n25.7°: Natural branching (plant presets).\nArbitrary: Produces non-integer rotation spirals and unusual geometric patterns.\n\nChanging this from a preset's natural angle creates interesting distortions."
+    },
+    "lyapunov_sequence": {
+      "label": "Sequence",
+      "tooltip": "String of 'A' and 'B' characters (case-sensitive) that drives the logistic parameter alternation.\n\nA = use the pixel's real (horizontal) coordinate as the logistic parameter r.\nB = use the pixel's imaginary (vertical) coordinate as r.\n\nEffect: The sequence pattern is what creates the characteristic banded and swirling structure of Lyapunov fractals.\n\n⚠ Must contain at least one 'A' AND one 'B'. A sequence of all one letter maps the same axis to itself every step — no 2D structure forms and the image is flat or black.\n\nExamples: 'AB' (classic), 'AABAB', 'AAABBB', 'BABA'."
+    },
+    "lyapunov_warmup": {
+      "label": "Warmup Steps",
+      "tooltip": "Number of initial logistic-map iterations discarded before accumulating the Lyapunov exponent sum.\n\nPurpose: Allows transient behaviour (dependence on the initial x₀ value) to die out before measurement begins.\n\n100–200: Usually sufficient — the logistic map settles within ~50 steps for most (a, b) pairs.\n500: Conservative — use if images show vertical/horizontal banding artefacts that don't match the sequence pattern."
+    },
+    "lyapunov_iterations": {
+      "label": "Accumulation Steps",
+      "tooltip": "Number of logistic-map steps used to compute the Lyapunov exponent λ after warmup.\n\nMore steps = smoother, more accurate λ estimate → smoother colour gradients.\n\n200–500:   Acceptable for previewing — gradients may show slight noise.\n1000:      Default — clean result for most sequences.\n2000–5000: High quality — visible noise eliminated even for short sequences.\n\nRender time scales linearly with this value."
+    },
+    "cca_states": {
+      "label": "States",
+      "tooltip": "Number of distinct cell states N in the cyclic sequence 0→1→2→…→(N−1)→0.\n\nEffect: Controls how many colour steps a wave contains and how fast it propagates.\n\n2:    Trivial — only two states, forms simple alternating blobs. No spiral waves.\n3–5:  Fast-moving, tightly wound spirals with few colours.\n8–16: Multi-arm spirals with richer colour gradation — most visually interesting range.\n32+:  Slow-moving, large spirals — needs many more simulation steps to fully form."
+    },
+    "cca_neighborhood": {
+      "label": "Neighbourhood",
+      "tooltip": "Defines which cells are considered 'neighbours' for the update rule.\n\nmoore       — 8 neighbours: includes diagonal cells. Produces rounder, faster-moving spiral waves.\nvonneumann  — 4 neighbours: orthogonal only (up/down/left/right). Produces squarer, slower-moving spirals that align to the image grid.\n\nMoore neighbourhood generally produces more visually complex results at the same state count."
+    },
+    "cca_steps": {
+      "label": "Simulation Steps",
+      "tooltip": "Number of CCA update steps simulated before the image is captured.\n\nSpiral formation timeline:\n< 50:   Random noise — no spirals have formed yet.\n100–200: Spiral nucleation — first spirals appear.\n300–500: Spirals fully developed and propagating — best visual results for most state counts.\n1000+:  Spirals compete and annihilate — image stabilises to fewer, larger spirals.\n\nOnce spirals reach steady state, additional steps do not change the image."
+    },
+    "cca_seed": {
+      "label": "Seed",
+      "tooltip": "Random seed for the initial assignment of states to grid cells.\n\nEffect: Determines where spiral nucleation points form. Different seeds produce different spiral arrangements — same overall character, different positions and counts."
+    },
+    "physarum_agents": {
+      "label": "Agents",
+      "tooltip": "Number of simulated slime-mould particles.\n\n50 000:    Sparse — trails form but network is thin and disconnected.\n100–200 K: Moderate — good balance of detail and render speed. Recommended default.\n300–500 K: Dense — thick, well-connected networks with high contrast trails.\n\n⚠ Above 500 K, simulation steps become slow. Agent count has the largest effect on render time of all Physarum parameters."
+    },
+    "physarum_steps": {
+      "label": "Simulation Steps",
+      "tooltip": "Number of agent update and trail diffuse/decay cycles.\n\nTimeline:\n50:    Very early — thin disconnected trails visible.\n100–200: Network forming — main paths emerging.\n300–500: Well-developed network — tubes thick and clearly visible.\n1000+: Mature network — stable topology, diminishing change per step.\n\nMore steps generally produces more refined, consolidated networks."
+    },
+    "physarum_sensor_angle": {
+      "label": "Sensor Angle (°)",
+      "tooltip": "Half-angle of the three-sensor forward arc (centre sensor at 0°, left at −angle, right at +angle).\n\nNarrow (15–30°): Agents follow existing trails closely — reinforces highways, produces fewer branches.\nMedium (45°): Balanced — default, produces natural-looking networks.\nWide (60–90°): Agents sample far to the side — more branching, meandering, coral-like networks."
+    },
+    "physarum_sensor_dist": {
+      "label": "Sensor Distance (px)",
+      "tooltip": "How far ahead of the agent each of the three sensors samples the chemical trail.\n\nSmall (1–3 px): Very local sensing — tight, densely wound networks.\nMedium (9 px): Default — agents react to trails at a natural scale.\nLarge (20–50 px): Long-range sensing — agents 'see' far ahead, producing straighter, more highway-like corridors.\n\nShould be scaled proportionally if you change the image resolution significantly."
+    },
+    "physarum_rotation_angle": {
+      "label": "Rotation Angle (°)",
+      "tooltip": "How far an agent rotates toward the strongest sensor reading each step.\n\nSmall (10–20°): Gentle turning — smooth curves and gradual bends.\nMedium (45°): Default — moderately responsive turning.\nLarge (60–90°): Sharp turning — agents respond aggressively, producing jittery paths and more tangled networks."
+    },
+    "physarum_step_size": {
+      "label": "Step Size (px)",
+      "tooltip": "Distance each agent moves forward per simulation step.\n\n0.5–1.0: Fine, slow network growth — high spatial resolution.\n1.0:     Default.\n2.0–5.0: Coarser, faster growth — produces bolder, more graphical networks with lower resolution.\n\nNote: step_size and sensor_dist should be scaled together — a larger step size means the agent should also look further ahead."
+    },
+    "physarum_deposit": {
+      "label": "Deposit Amount",
+      "tooltip": "Amount of chemical trail deposited by each agent per step.\n\nLow (0.5–2.0): Faint trails — network is subtle and takes more steps to reinforce.\nMedium (5.0): Default — trails build up at a moderate rate.\nHigh (10–20): Bold trails — strong positive feedback, network forms quickly but can saturate to a uniform bright field.\n\nInteracts strongly with decay — high deposit and high decay can cancel out."
+    },
+    "physarum_decay": {
+      "label": "Trail Decay",
+      "tooltip": "Fraction of chemical remaining after each simulation step (0–1).\n\n0.80: Rapid decay — trails fade quickly, network stays sparse and fragile.\n0.95: Default — balanced persistence.\n0.99: Very slow decay — trails persist almost indefinitely. Dense, strongly reinforced networks with high contrast.\n\n⚠ Decay exactly 1.0 (no decay) causes the trail field to saturate uniformly — network loses all contrast over time."
+    },
+    "physarum_seed": {
+      "label": "Seed",
+      "tooltip": "Random seed for initial agent positions and movement headings.\n\nDifferent seeds produce different network topologies — same parameters, different layout. Use to find a composition that works well for your image dimensions."
+    },
+    "palette_type": {
+      "label": "Palette Type",
+      "tooltip": "Selects how palette colours are generated:\n\nnamed             — choose from built-in hand-crafted palettes.\ncomplementary     — two hues directly opposite on the colour wheel, blended smoothly.\ntriadic           — three hues equally spaced (120° apart) for vibrant multi-colour results.\nanalogous         — adjacent hues (±30°) for harmonious, natural-feeling gradients.\nsplit_complementary — one base hue plus two hues 150° away — high contrast with more variety than complementary.\ncustom            — define your own gradient stops via the JSON 'palette_stops' field."
+    },
+    "palette_name": {
+      "label": "Named Palette",
+      "tooltip": "Selects a built-in hand-crafted colour palette:\n\nclassic_mandelbrot — deep blue through black to white; the traditional Mandelbrot appearance.\nfire               — black → deep red → orange → bright yellow; high-contrast thermal look.\nice                — dark navy → cyan → white; cold, crystalline feel.\nelectric           — black → purple → electric cyan → white; vivid neon look.\ngrayscale          — pure black to white; highlights structure over colour."
+    },
+    "palette_hue": {
+      "label": "Base Hue (°)",
+      "tooltip": "Starting hue in degrees (0–360) for generated palette types (complementary, triadic, analogous, split_complementary).\n\n0°: Red.  30°: Orange.  60°: Yellow.  120°: Green.  180°: Cyan.  240°: Blue.  300°: Magenta.\n\nThe other hues in the palette are derived from this value according to the palette type's geometry on the colour wheel."
+    },
+    "palette_saturation": {
+      "label": "Saturation",
+      "tooltip": "Colour purity for generated palettes (0–1).\n\n0.0: Greyscale — all palette colours are neutral greys.\n0.5: Muted, pastel tones.\n0.8: Default — vivid but not over-saturated.\n1.0: Maximum saturation — fully pure hues.\n\nVery high saturation can make complex fractals feel harsh; reduce to 0.5–0.7 for more harmonious results."
+    },
+    "palette_lightness": {
+      "label": "Lightness",
+      "tooltip": "Base lightness for generated palette colours in HSL (0–1).\n\n0.2–0.3: Dark palette — colours are deep and rich. Good for fractal interiors.\n0.5:     Default — balanced lightness, most vivid colours.\n0.7–0.8: Light palette — pastel tones.\n\n⚠ Values at 0.0 or 1.0 collapse all colours to black or white respectively — no variation will be visible."
+    },
+    "palette_phase": {
+      "label": "Phase Offset",
+      "tooltip": "Cyclically rotates the palette by this fraction (0–1 = 0%–100% of the palette length).\n\nEffect: Shifts which iteration count maps to which colour without changing the palette itself. Useful for:\n• Finding a colour arrangement that suits a specific image.\n• Animation: smoothly incrementing phase creates a flowing colour animation."
+    },
+    "palette_lab": {
+      "label": "LAB Interpolation",
+      "tooltip": "When enabled, palette colours are interpolated in CIELAB perceptual colour space instead of linear RGB.\n\nEnabled: Transitions avoid muddy grey mid-tones between complementary colours (e.g. red→green passes through vivid yellow rather than dark brown-grey). Perceptually uniform — equal steps look equally different.\nDisabled: Linear RGB interpolation — faster, but complementary colour pairs produce a grey midpoint.\n\nRecommended: ON for any palette with complementary or triadic colour pairs."
+    },
+    "pp_gamma": {
+      "label": "Gamma",
+      "tooltip": "Gamma correction exponent applied to all channels after the render (pixel^(1/gamma) in display conventions).\n\n1.0: No correction — linear output.\n2.2: Standard sRGB display gamma — brightens midtones, matches most monitor expectations.\n0.5: Darkens midtones — useful for bringing out detail in bright, washed-out images.\n\nApplied after contrast and brightness."
+    },
+    "pp_brightness": {
+      "label": "Brightness",
+      "tooltip": "Additive offset applied uniformly to all channels (range −1 to +1).\n\n0.0:  No change.\n+0.2: Lifts all colours — useful if the render is too dark overall.\n−0.2: Darkens — useful for over-bright plasma or noise renders.\n\nApplied before contrast. ⚠ Large offsets clip bright or dark regions to white/black."
+    },
+    "pp_contrast": {
+      "label": "Contrast",
+      "tooltip": "Scales pixel values around the mid-grey point (0.5):\n  output = (input − 0.5) × contrast + 0.5\n\n1.0:  No change.\n>1.0: Pushes darks darker and lights lighter — increases perceived sharpness and colour saturation.\n<1.0: Compresses tonal range toward mid-grey — flattens the image.\n\n⚠ Values above 2.0 cause significant clipping at both ends of the tonal range."
+    },
+    "pp_saturation": {
+      "label": "Saturation",
+      "tooltip": "Scales the colour saturation of the final image.\n\n0.0: Full greyscale conversion (luma-weighted).\n1.0: No change — original rendered colours.\n1.5: Boosted saturation — more vivid.\n>2.0: Heavy boost — ⚠ Can cause colour clipping and hue shifts in near-saturated areas.\n\nApplied in RGB space after all other post-process operations."
+    },
+    "pp_vignette": {
+      "label": "Vignette",
+      "tooltip": "Radial darkening applied from the image corners inward.\n\n0.0:  No vignette.\n0.2–0.4: Subtle photographic vignette — draws the eye toward the centre.\n0.6–0.8: Strong darkening — corners become noticeably dark.\n1.0:  Maximum — corners approach black.\n\nThe vignette is elliptical, matched to the image aspect ratio."
+    },
+    "viewport_width": {
+      "label": "Width (px)",
+      "tooltip": "Output image width in pixels.\n\nRender time scales linearly with width × height. Typical sizes:\n1920 × 1080: Full HD — good for screen display and web.\n3840 × 2160: 4K UHD — high quality, suitable for large print.\n7680 × 4320: 8K — very slow; use quick render to verify composition first."
+    },
+    "viewport_height": {
+      "label": "Height (px)",
+      "tooltip": "Output image height in pixels. See Width for render time guidance.\n\nAspect ratio is determined by width / height — the complex-plane window is independently set by the real/imag min/max fields and does not automatically track the pixel aspect ratio."
+    },
+    "viewport_real_min": {
+      "label": "Real min",
+      "tooltip": "Left edge of the complex-plane window (real axis).\n\nThe pixel at x=0 maps to this real coordinate. Changing this value while holding real_max fixed zooms in/out horizontally.\n\n⚠ Must be strictly less than real_max or the render will produce a black image."
+    },
+    "viewport_real_max": {
+      "label": "Real max",
+      "tooltip": "Right edge of the complex-plane window (real axis).\n\nThe pixel at x=width−1 maps to this real coordinate. The viewport range R = real_max − real_min determines how deep the zoom is.\n\n⚠ Must be strictly greater than real_min."
+    },
+    "viewport_imag_min": {
+      "label": "Imag min",
+      "tooltip": "Bottom edge of the complex-plane window (imaginary axis).\n\nIn standard mathematical orientation this is the minimum imaginary value. Note that screen Y increases downward, so imag_min is the bottom of the image.\n\n⚠ Must be strictly less than imag_max."
+    },
+    "viewport_imag_max": {
+      "label": "Imag max",
+      "tooltip": "Top edge of the complex-plane window (imaginary axis).\n\nThe pixel at y=0 maps to this imaginary coordinate (screen top = mathematical top).\n\n⚠ Must be strictly greater than imag_min."
+    },
+    "aa_samples": {
+      "label": "AA Samples",
+      "tooltip": "Per-axis supersampling factor for anti-aliasing.\n\n1: Off — one sample per pixel. Fast, but aliased edges visible.\n2: 2×2 = 4 samples per pixel. Smooths most visible aliasing.\n3: 3×3 = 9 samples. High quality — good for final renders.\n4: 4×4 = 16 samples. Maximum — use for print-quality output.\n\n⚠ Render time scales with the square of this value: AA=4 is 16× slower than AA=1."
+    },
+    "thread_count": {
+      "label": "Threads",
+      "tooltip": "Number of parallel worker threads used by the tile renderer.\n\n0: Auto-detect — uses all logical CPU cores (recommended).\n1: Single-threaded — useful for debugging or avoiding thermal throttling.\nN: Uses exactly N threads — reduce to keep some cores free for other applications during long renders.\n\nHas no effect on non-tileable algorithms (RD, Physarum, CCA, Attractor, Ikeda, L-System, Lyapunov, Plasma) which run on a single thread by design."
+    },
+    "tile_size": {
+      "label": "Tile Size (px)",
+      "tooltip": "Side length in pixels of each work tile dispatched to the thread pool.\n\n16–32:  Many small tiles — fine-grained progress updates, slightly more scheduling overhead.\n64:     Default — good balance of progress granularity and dispatch efficiency.\n128–256: Fewer, larger tiles — less overhead but progress bar updates less frequently.\n\nFor very fast algorithms (plasma, CCA), larger tiles reduce scheduling overhead proportionally more."
+    },
+    "output_dpi": {
+      "label": "Output DPI",
+      "tooltip": "Dots-per-inch value embedded in PNG/TIFF file metadata.\n\nThis does not affect pixel dimensions — only the physical size reported to print software.\n\n72:  Screen / web display.\n150: Web-optimised print.\n300: Standard print quality.\n600: High-resolution print / archival.\n\nEXR files do not carry a DPI tag."
+    },
+    "bit_depth": {
+      "label": "Bit Depth",
+      "tooltip": "Colour precision of the output file.\n\n8-bit: 256 levels per channel (16.7 M colours). Standard for web and screen. Smaller files.\n16-bit: 65 536 levels per channel. TIFF only. Better for post-processing in Photoshop or Lightroom — preserves detail in shadows and highlights that 8-bit would clip.\n\nNote: EXR is always 32-bit float regardless of this setting. Internal render precision is always 32-bit float."
+    },
+    "quick_render": {
+      "label": "Quick Render (¼ res)",
+      "tooltip": "Renders at one quarter of the configured pixel dimensions with anti-aliasing disabled.\n\nUse to quickly verify composition, colour palette, and algorithm parameters before committing to a full-resolution render.\n\nThe preview image is displayed at full window size — pixelation at ¼ res is expected and does not affect the saved output.\n\nQuick render does not save an output file."
+    },
+    "output_format": {
+      "label": "Output Format",
+      "tooltip": "File format used when saving the rendered image.\n\nPNG  — Lossless, 8 or 16-bit. Universal support. Best for web and sharing.\nTIFF — Lossless, 8 or 16-bit. Best for print workflows and post-processing in professional editors. Larger files.\nEXR  — 32-bit float per channel. HDR-capable. Best for compositing pipelines and tone-mapping experiments. Requires software that supports OpenEXR."
+    }
+  }
+}

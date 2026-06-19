@@ -2,6 +2,8 @@
 #include "artgen/IAlgorithm.h"
 #include "artgen/PixelBuffer.h"
 #include "artgen/Viewport.h"
+#include <atomic>
+#include <functional>
 
 namespace artgen {
 
@@ -11,6 +13,10 @@ public:
     int  tile_size     = 64;
     int  aa_samples    = 1;    // 1=off, 2=2×2 (4 spp), 4=4×4 (16 spp)
     bool show_progress = true;
+
+    // Optional GUI callbacks — nullptr = disabled
+    std::function<void(int done, int total)> progress_cb;
+    std::atomic<bool>* cancel_flag = nullptr;
 
     void render(IAlgorithm& algo, PixelBuffer& buf, const Viewport& vp) const;
 

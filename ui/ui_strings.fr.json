@@ -1,0 +1,366 @@
+{
+  "_meta": { "language": "Français", "flag": "fr" },
+
+  "algorithms": {
+    "mandelbrot":         { "label": "Ensemble de Mandelbrot",        "tooltip": "Fractale de temps d'échappement classique : itère z → z² + c depuis z = 0 jusqu'à ce que |z| s'échappe ou que le nombre maximal d'itérations soit atteint.\n\nLa couleur de chaque pixel encode la vitesse d'échappement. Les points qui n'échappent jamais forment l'intérieur noir.\n\nDétail infini à toutes les échelles — zoomez sur n'importe quelle partie de la frontière." },
+    "julia":              { "label": "Ensemble de Julia",             "tooltip": "Similaire à Mandelbrot mais la constante c est fixée globalement ; la coordonnée du pixel est le z₀ de départ.\n\nChaque point sur la frontière de Mandelbrot génère un ensemble de Julia distinct. Ajustez Cr et Ci pour explorer des formes complètement différentes." },
+    "burning_ship":       { "label": "Bateau en Feu",                 "tooltip": "Fractale de temps d'échappement utilisant z → (|Re(z)| + i|Im(z)|)² + c. Prendre la valeur absolue des deux composantes brise la symétrie rotationnelle de Mandelbrot, produisant des structures angulaires en forme de navire." },
+    "multibrot":          { "label": "Multibrot",                     "tooltip": "Généralise la récurrence de Mandelbrot en z → zⁿ + c pour tout exposant réel n.\n\nn = 2 reproduit exactement Mandelbrot. Les valeurs plus élevées ajoutent des lobes (n−1 bulbes). Les valeurs non entières produisent des formes intermédiaires avec une symétrie partielle." },
+    "tricorn":            { "label": "Tricorne (Mandelbar)",           "tooltip": "Utilise la récurrence conjuguée z → z̄² + c. Le conjugué complexe empêche l'attracteur d'être holomorphe, produisant une fractale à symétrie 3 fois et des caractéristiques plus angulaires que Mandelbrot." },
+    "newton":             { "label": "Fractale de Newton",            "tooltip": "Applique la méthode de Newton — z → z − f(z)/f′(z) — au polynôme zⁿ − 1.\n\nChaque pixel est colorié selon la racine vers laquelle il converge (teinte) et le nombre d'étapes nécessaires (luminosité). Les frontières entre bassins d'attraction sont fractales." },
+    "nova":               { "label": "Fractale Nova",                 "tooltip": "Étend la méthode de Newton avec un paramètre de relaxation R et une constante additive c :\n  z → z − R · f(z)/f′(z) + c\n\n⚠ Le mode Julia nécessite max_iterations ≥ 512 sinon les images seront presque noires." },
+    "noise":              { "label": "Bruit Simplex FBM",             "tooltip": "Mouvement Brownien Fractal : somme plusieurs octaves de bruit simplex, chacune avec la moitié de l'amplitude et le double de la fréquence de la précédente.\n\nProduit des textures organiques lisses — nuages, terrain, marbre — selon les réglages d'octaves et de persistance." },
+    "reaction_diffusion": { "label": "Réaction-Diffusion",            "tooltip": "Simule le modèle Gray-Scott : deux produits chimiques diffusent à des vitesses différentes et réagissent.\n\nLe taux d'alimentation F réapprovisionne U ; le taux d'élimination k retire V. Différentes paires (F, k) produisent des motifs qualitativement différents : taches, rayures, labyrinthes, vers et branches corallines." },
+    "plasma":             { "label": "Plasma (Diamant-Carré)",        "tooltip": "Algorithme de déplacement de point médian récursif générant des champs de hauteur fractals lisses.\n\nToujours produit une sortie visible et colorée — idéal pour les arrière-plans et tester les réglages de palette." },
+    "attractor":          { "label": "Attracteur Étrange",            "tooltip": "Itère une carte 2D (Clifford ou De Jong) des millions de fois et accumule un histogramme de densité des points visités.\n\nLes pixels plus brillants = l'orbite a visité cette région plus souvent.\n⚠ Certaines combinaisons de paramètres effondrent l'orbite — voir les avertissements de frontière sur a, b, c, d." },
+    "ikeda":              { "label": "Application d'Ikeda",           "tooltip": "Modélise la lumière rebondissant dans une cavité laser avec la non-linéarité u.\n\nPour u > 0.6 l'attracteur devient chaotique, produisant des structures en rubans.\n⚠ u < 0.75 produit des orbites périodiques — l'image sera presque noire." },
+    "voronoi":            { "label": "Diagramme de Voronoï",          "tooltip": "Partitionne le plan en assignant chaque pixel à son point générateur le plus proche. Trois modes de colorisation et trois métriques de distance produisent 9 styles visuels distincts." },
+    "lsystem":            { "label": "Système-L",                     "tooltip": "Système de réécriture de chaînes de Lindenmayer rendu en graphiques tortue.\n\n⚠ Chaque itération multiplie le nombre de commandes de dessin — les valeurs au-delà de 8 peuvent prendre des minutes." },
+    "lyapunov":           { "label": "Fractale de Lyapunov",          "tooltip": "Colorie chaque pixel (a, b) selon l'exposant de Lyapunov λ d'une application logistique.\n\n⚠ Les deux coordonnées doivent rester strictement dans (2, 4). En dehors de cette plage, l'image est noire." },
+    "cca":                { "label": "Automate Cellulaire Cyclique",  "tooltip": "Chaque cellule avance à l'état suivant (mod N) quand elle voit au moins un voisin déjà dans cet état suivant.\n\nDes vagues en spirale rotative se forment spontanément à partir d'un départ aléatoire." },
+    "physarum":           { "label": "Physarum (Moisissure Gluante)", "tooltip": "Simule des agents Physarum polycephalum qui déposent, sentent et suivent des traces chimiques.\n\nLe réseau émergent trouve spontanément des chemins quasi-optimaux — similaire à la moisissure gluante biologique résolvant des labyrinthes." }
+  },
+
+  "params": {
+    "max_iterations": {
+      "label": "Itérations max.",
+      "tooltip": "Limite le nombre de fois que la récurrence est appliquée avant de déclarer un point 'dans l'ensemble'.\n\nEffet : Plus élevé = plus de détail dans les régions de frontière minces, mais rendus proportionnellement plus lents.\n\n⚠ Pour un zoom profond de largeur R unités complexes, vous avez besoin d'au moins max(2000, 500 / √R) itérations ou les régions de frontière apparaîtront noires."
+    },
+    "escape_radius": {
+      "label": "Rayon d'échappement",
+      "tooltip": "Seuil de magnitude — une fois que |z| dépasse cette valeur, le point est déclaré échappé.\n\n2.0 est la valeur exacte pour Mandelbrot/Julia. Des valeurs plus grandes améliorent la précision du coloriage lisse."
+    },
+    "smooth_coloring": {
+      "label": "Coloriage lisse",
+      "tooltip": "Applique la fraction de compte d'échappement de Linas Vepstas pour supprimer les bandes de couleur discrètes.\n\nActivé : compte d'itération en nombre réel lisse — aucun effet d'escalier visible.\nDésactivé : chaque étape mappe vers un index de palette distinct — produit l'apparence classique 'en escalier'."
+    },
+    "color_cycle": {
+      "label": "Cycle de couleur",
+      "tooltip": "Contrôle combien de fois la palette se répète sur toute la plage d'itération.\n\nValeurs basses (4–16) : larges bandes de couleur.\nMoyenne (32–64) : équilibre recommandé.\nHautes (128–256) : bandes très fines — détail visible seulement à fort grossissement."
+    },
+    "coloring_mode": {
+      "label": "Mode de coloriage",
+      "tooltip": "Détermine comment les comptes d'itération sont mappés aux positions de palette.\n\nsmooth — Mappage direct du compte d'échappement normalisé.\nhistogram_eq — Redistribue les couleurs pour équilibrer la luminosité.\norbit_trap — Colorie par la distance minimale de l'orbite à l'origine."
+    },
+    "julia_cr": {
+      "label": "Graine Cr (réel)",
+      "tooltip": "Partie réelle de la constante complexe fixe c.\n\nDe petits changements produisent des ensembles de Julia dramatiquement différents. Essayez des valeurs proches de la frontière de Mandelbrot pour les formes les plus complexes."
+    },
+    "julia_ci": {
+      "label": "Graine Ci (imaginaire)",
+      "tooltip": "Partie imaginaire de la constante complexe fixe c.\n\nL'ensemble de Julia est symétrique sous z → −z, donc (Cr, Ci) et (Cr, −Ci) donnent des images miroir."
+    },
+    "multibrot_power": {
+      "label": "Exposant",
+      "tooltip": "Exposant n dans la récurrence z → zⁿ + c.\n\nn = 2 : Mandelbrot standard.\nn = 3 : forme à deux lobes avec symétrie 3 fois.\nLes valeurs non entières produisent des formes intermédiaires."
+    },
+    "newton_power": {
+      "label": "Degré du polynôme",
+      "tooltip": "Degré de f(z) = zⁿ − 1. Doit être ≥ 2.\n\nDétermine le nombre de régions de couleur distinctes (bassins). n = 3 donne trois régions ; n = 4 en donne quatre en croix."
+    },
+    "newton_saturation": {
+      "label": "Saturation du bassin",
+      "tooltip": "Saturation de la teinte assignée à chaque bassin de racine.\n\n0.0 : Niveaux de gris uniquement.\n1.0 : Couleurs de bassin entièrement saturées."
+    },
+    "nova_type": {
+      "label": "Type Nova",
+      "tooltip": "Contrôle quelle variable est la coordonnée du pixel.\n\nmandelbrot : z₀ = 1, c = pixel.\njulia : z₀ = pixel, c = graine fixe.\n\n⚠ Le mode Julia nécessite max_iterations ≥ 512."
+    },
+    "nova_power": {
+      "label": "Puissance Nova",
+      "tooltip": "Degré du polynôme pour l'étape de Newton Nova. Doit être ≥ 2 — les valeurs inférieures produisent une image vide."
+    },
+    "nova_relaxation": {
+      "label": "Relaxation R",
+      "tooltip": "Multiplicateur de taille de pas appliqué à la correction de Newton.\n\nR = 1.0 : Étape de Newton standard.\nR ≠ 1.0 : Génère une structure fractale secondaire le long des bords des bassins."
+    },
+    "nova_max_iterations": {
+      "label": "Itérations max.",
+      "tooltip": "Limite par pixel du nombre d'étapes Newton.\n\n⚠ Mode Julia : utilisez ≥ 512. La valeur par défaut 256 laisse souvent la plupart des pixels non convergés."
+    },
+    "nova_seed_r": {
+      "label": "Graine r (réel)",
+      "tooltip": "Partie réelle de la constante additive fixe c (mode Julia uniquement).\n\n⚠ Gardez |c| = √(r² + i²) entre 0.8 et 2.5. En dessous de 0.8 → image plate unicolore."
+    },
+    "nova_seed_i": {
+      "label": "Graine i (imaginaire)",
+      "tooltip": "Partie imaginaire de la constante additive fixe c (mode Julia uniquement).\n\n⚠ Gardez |c| = √(r² + i²) entre 0.8 et 2.5."
+    },
+    "noise_octaves": {
+      "label": "Octaves",
+      "tooltip": "Nombre de couches de bruit sommées.\n\n1–2 : Motifs lisses.\n4–6 : Apparence naturelle recommandée.\n8–10 : Grain très fin — lent à calculer."
+    },
+    "noise_persistence": {
+      "label": "Persistance",
+      "tooltip": "Facteur d'échelle d'amplitude par octave (0–1).\n\n0.3 : Résultat lisse, doux.\n0.5 : FBM standard.\n0.8–0.9 : Résultat rugueux, turbulent."
+    },
+    "noise_lacunarity": {
+      "label": "Lacunarité",
+      "tooltip": "Multiplicateur de fréquence par octave.\n\n2.0 : Standard — chaque octave est deux fois plus fine.\nValeurs plus élevées : croissance de fréquence plus rapide."
+    },
+    "noise_scale": {
+      "label": "Échelle",
+      "tooltip": "Zoom global appliqué au champ de bruit.\n\nFaible : grandes caractéristiques lentes.\nÉlevé : nombreuses répétitions fines — aspect texturé."
+    },
+    "noise_seed": {
+      "label": "Graine",
+      "tooltip": "Graine entière pour la table de permutation du bruit simplex.\n\nDifférentes graines produisent des motifs complètement indépendants avec des paramètres identiques."
+    },
+    "rd_preset": {
+      "label": "Préréglage",
+      "tooltip": "Paires de paramètres Gray-Scott (F, k) nommées :\n\ncoral       — filaments corallines\nmitosis     — taches ovales en division\nworms       — traces de vers serpentins\nmaze        — murs de labyrinthe\nspots       — réseau stable de points\nfingerprint — crêtes parallèles denses"
+    },
+    "rd_feed": {
+      "label": "Taux d'alimentation F",
+      "tooltip": "Taux de réapprovisionnement du produit chimique U.\n\n⚠ Plage utile : environ 0.010 – 0.095. En dehors, l'image est généralement vide. Les petits changements (±0.002) peuvent basculer entre taches, rayures et labyrinthes."
+    },
+    "rd_kill": {
+      "label": "Taux d'élimination k",
+      "tooltip": "Taux de suppression du produit chimique V.\n\n⚠ Plage utile : environ 0.045 – 0.070. Doit être réglé conjointement avec F."
+    },
+    "rd_steps": {
+      "label": "Étapes de simulation",
+      "tooltip": "Nombre d'étapes de temps Gray-Scott simulées.\n\n4000–6000 : La plupart des motifs se sont stabilisés.\n8000–12000 : Pour les préréglages à formation lente (coral, mitosis)."
+    },
+    "rd_seed": {
+      "label": "Graine",
+      "tooltip": "Graine aléatoire pour la perturbation initiale de la grille chimique.\n\nDifférentes graines produisent des arrangements spatiaux différents du même type de motif."
+    },
+    "plasma_roughness": {
+      "label": "Rugosité",
+      "tooltip": "Facteur d'échelle d'amplitude par niveau de subdivision (0–1).\n\n0.3–0.5 : Terrain naturel lisse.\n0.8–1.0 : Résultat accidenté, chaotique."
+    },
+    "plasma_octaves": {
+      "label": "Octaves de grille",
+      "tooltip": "Contrôle la résolution de la grille sous-jacente : résolution = 2^n + 1.\n\n⚠ Les valeurs supérieures à 12 peuvent épuiser la mémoire."
+    },
+    "plasma_seed": {
+      "label": "Graine",
+      "tooltip": "Graine aléatoire pour le déplacement de point médian diamant-carré.\n\nDétermine complètement le champ de hauteur."
+    },
+    "attractor_type": {
+      "label": "Type d'attracteur",
+      "tooltip": "Sélectionne la carte 2D itérée :\n\nClifford — couplage sinusoïdal entre axes.\nDe Jong — arrangement différent, structures en pétales."
+    },
+    "attractor_a": {
+      "label": "Paramètre a",
+      "tooltip": "Premier paramètre de forme.\n\n⚠ Pour Clifford : gardez les quatre paramètres dans [−2.0, 2.0] avec au moins trois ayant |valeur| > 1.0. La combinaison |b| < 1.0 ET |d| > 1.5 cause un effondrement de l'orbite → image noire."
+    },
+    "attractor_b": {
+      "label": "Paramètre b",
+      "tooltip": "Deuxième paramètre de forme.\n\n⚠ Clifford : |b| < 1.0 combiné avec |d| > 1.5 provoque un effondrement de l'orbite → image noire."
+    },
+    "attractor_c": {
+      "label": "Paramètre c",
+      "tooltip": "Troisième paramètre de forme. Gardez dans [−2.0, 2.0] pour des résultats fiables."
+    },
+    "attractor_d": {
+      "label": "Paramètre d",
+      "tooltip": "Quatrième paramètre de forme.\n\n⚠ Clifford : |d| > 1.5 combiné avec |b| < 1.0 cause un effondrement de l'orbite → image noire."
+    },
+    "attractor_iterations": {
+      "label": "Itérations (millions)",
+      "tooltip": "Nombre total d'étapes d'orbite accumulées.\n\n5 M : Bon résultat recommandé.\n10–20 M : Haute qualité pour impression."
+    },
+    "ikeda_u": {
+      "label": "Non-linéarité u",
+      "tooltip": "Contrôle le degré de non-linéarité de la carte d'Ikeda.\n\n⚠ u < 0.75 produit des orbites périodiques → image presque noire. Meilleure plage : [0.75, 0.90]."
+    },
+    "ikeda_iterations": {
+      "label": "Itérations (millions)",
+      "tooltip": "Longueur totale de l'orbite pour l'histogramme de densité.\n\n10 M recommandé — les rubans sont denses et bien définis."
+    },
+    "voronoi_seeds": {
+      "label": "Points générateurs",
+      "tooltip": "Nombre de points générateurs de Voronoï placés aléatoirement.\n\n8–16 : Grandes cellules — aspect graphique et audacieux.\n128–256 : Texture en mosaïque ou vitrail."
+    },
+    "voronoi_mode": {
+      "label": "Mode de coloriage",
+      "tooltip": "Détermine ce qu'encode la couleur de chaque pixel :\n\ncells    — chaque cellule remplie avec sa couleur de palette.\ndistance — luminosité = distance au point générateur le plus proche.\nedge     — seules les frontières de cellules sont dessinées."
+    },
+    "voronoi_metric": {
+      "label": "Métrique de distance",
+      "tooltip": "Fonction de distance pour assigner les pixels à leur générateur le plus proche :\n\neuclidean  — distance droite standard. Régions circulaires.\nmanhattan  — |Δx| + |Δy|. Régions en losange.\nchebyshev  — max(|Δx|, |Δy|). Régions carrées."
+    },
+    "voronoi_seed": {
+      "label": "Graine",
+      "tooltip": "Graine aléatoire pour le placement des points générateurs.\n\nDifférentes graines produisent des dispositions de cellules complètement différentes."
+    },
+    "ls_preset": {
+      "label": "Préréglage Système-L",
+      "tooltip": "Grammaires Système-L nommées :\n\nplant       — plante branchue de Barnsley\ndragon      — courbe du dragon de Heighway\nsierpinski  — triangle de Sierpiński\nhilbert     — courbe d'espace de Hilbert\ntree        — arbre binaire symétrique"
+    },
+    "ls_iterations": {
+      "label": "Itérations",
+      "tooltip": "Nombre d'étapes de réécriture de chaîne.\n\n⚠ Chaque itération supplémentaire multiplie le nombre de commandes de dessin. Au-delà de 8 peut être très lent."
+    },
+    "ls_angle": {
+      "label": "Angle de rotation (°)",
+      "tooltip": "Angle de rotation de la tortue pour les commandes + et −.\n\n90° : Courbes alignées sur la grille.\n60° : Symétrie hexagonale.\n25.7° : Branchement naturel (plantes)."
+    },
+    "lyapunov_sequence": {
+      "label": "Séquence",
+      "tooltip": "Chaîne de caractères 'A' et 'B' pilotant l'alternance du paramètre logistique.\n\n⚠ Doit contenir au moins un 'A' ET un 'B'. Une séquence d'une seule lettre produit une image plate ou noire."
+    },
+    "lyapunov_warmup": {
+      "label": "Étapes de préchauffage",
+      "tooltip": "Itérations initiales de la carte logistique rejetées avant l'accumulation de l'exposant de Lyapunov.\n\n100–200 : Généralement suffisant."
+    },
+    "lyapunov_iterations": {
+      "label": "Étapes d'accumulation",
+      "tooltip": "Étapes de la carte logistique utilisées pour calculer λ après le préchauffage.\n\nPlus d'étapes = gradients de couleur plus lisses et plus précis."
+    },
+    "cca_states": {
+      "label": "États",
+      "tooltip": "Nombre d'états distincts N dans le cycle.\n\n3–5 : Spirales à rotation rapide.\n8–16 : Spirales multi-bras avec dégradé de couleurs riche.\n32+ : Spirales lentes — nécessite plus d'étapes pour se former."
+    },
+    "cca_neighborhood": {
+      "label": "Voisinage",
+      "tooltip": "Définit quelles cellules sont considérées comme 'voisines' :\n\nmoore      — 8 voisins incluant les diagonales. Spirales plus rondes et rapides.\nvonneumann — 4 voisins orthogonaux. Spirales plus carrées et lentes."
+    },
+    "cca_steps": {
+      "label": "Étapes de simulation",
+      "tooltip": "Nombre d'étapes de mise à jour CCA simulées.\n\n300–500 : Spirales entièrement développées — meilleurs résultats visuels."
+    },
+    "cca_seed": {
+      "label": "Graine",
+      "tooltip": "Graine aléatoire pour l'assignation initiale des états aux cellules de grille.\n\nDifférentes graines produisent différents arrangements de spirales."
+    },
+    "physarum_agents": {
+      "label": "Agents",
+      "tooltip": "Nombre de particules de moisissure simulées.\n\n100–200 K : Recommandé — bon équilibre détail/vitesse.\n⚠ Au-delà de 500 K, les étapes de simulation deviennent lentes."
+    },
+    "physarum_steps": {
+      "label": "Étapes de simulation",
+      "tooltip": "Nombre de cycles de mise à jour et de diffusion/décroissance des traces.\n\n300–500 : Réseau bien développé recommandé."
+    },
+    "physarum_sensor_angle": {
+      "label": "Angle du capteur (°)",
+      "tooltip": "Demi-angle de l'arc avant des trois capteurs.\n\nÉtroit (15–30°) : Suit étroitement les traces — renforce les autoroutes.\nLarge (60–90°) : Plus de branchements, réseaux corallines."
+    },
+    "physarum_sensor_dist": {
+      "label": "Distance du capteur (px)",
+      "tooltip": "Distance en avant de chaque agent pour l'échantillonnage de la trace chimique.\n\nGrande distance : corridors plus droits, plus semblables à des autoroutes."
+    },
+    "physarum_rotation_angle": {
+      "label": "Angle de rotation (°)",
+      "tooltip": "Distance de rotation d'un agent vers le signal le plus fort par étape.\n\nPetit : virages doux — courbes lisses.\nGrand : virages brusques — chemins saccadés."
+    },
+    "physarum_step_size": {
+      "label": "Taille du pas (px)",
+      "tooltip": "Distance de déplacement vers l'avant par étape de simulation.\n\nPlus grand : croissance de réseau plus grossière et plus rapide."
+    },
+    "physarum_deposit": {
+      "label": "Quantité déposée",
+      "tooltip": "Quantité de trace chimique déposée par agent par étape.\n\nÉlevée : traces audacieuses, réseau à fort contraste."
+    },
+    "physarum_decay": {
+      "label": "Décroissance des traces",
+      "tooltip": "Fraction de produit chimique restant après chaque étape (0–1).\n\n⚠ La décroissance exactement 1.0 (sans décroissance) cause la saturation du champ de traces — le réseau perd tout contraste."
+    },
+    "physarum_seed": {
+      "label": "Graine",
+      "tooltip": "Graine aléatoire pour les positions et directions initiales des agents."
+    },
+    "palette_type": {
+      "label": "Type de palette",
+      "tooltip": "Sélectionne la méthode de génération des couleurs de palette :\n\nnamed             — palettes intégrées soigneusement conçues.\ncomplementary     — deux teintes opposées sur la roue chromatique.\ntriadic           — trois teintes espacées à 120°.\nanalogous         — teintes adjacentes (±30°).\nsplit_complementary — une teinte de base plus deux teintes à 150°.\ncustom            — définissez vos propres arrêts de dégradé."
+    },
+    "palette_name": {
+      "label": "Palette nommée",
+      "tooltip": "Sélectionne une palette intégrée :\n\nclassic_mandelbrot — bleu profond à blanc sur noir.\nfire               — noir → rouge → orange → jaune vif.\nice                — bleu marine → cyan → blanc.\nelectric           — noir → violet → cyan électrique → blanc.\ngrayscale          — noir pur à blanc."
+    },
+    "palette_hue": {
+      "label": "Teinte de base (°)",
+      "tooltip": "Teinte de départ en degrés (0–360) pour les types de palette générés.\n\n0° : Rouge.  60° : Jaune.  120° : Vert.  180° : Cyan.  240° : Bleu.  300° : Magenta."
+    },
+    "palette_saturation": {
+      "label": "Saturation",
+      "tooltip": "Pureté des couleurs pour les palettes générées (0–1).\n\n0.0 : Niveaux de gris.\n0.8 : Par défaut — vif sans être excessif.\n1.0 : Saturation maximale."
+    },
+    "palette_lightness": {
+      "label": "Luminosité",
+      "tooltip": "Luminosité de base pour les couleurs de palette générées en HSL (0–1).\n\n0.5 : Par défaut — couleurs les plus vives.\n⚠ Les valeurs à 0.0 ou 1.0 réduisent toutes les couleurs au noir ou au blanc."
+    },
+    "palette_phase": {
+      "label": "Décalage de phase",
+      "tooltip": "Fait tourner cycliquement la palette de cette fraction (0–1).\n\nUtile pour trouver un arrangement de couleurs adapté ou pour animer la palette."
+    },
+    "palette_lab": {
+      "label": "Interpolation LAB",
+      "tooltip": "Quand activé, les couleurs de palette sont interpolées dans l'espace colorimétrique perceptuel CIELAB.\n\nÉvite les tons gris boueux entre les couleurs complémentaires.\nRecommandé pour toute palette avec des paires de couleurs complémentaires ou triadiques."
+    },
+    "pp_gamma": {
+      "label": "Gamma",
+      "tooltip": "Exposant de correction gamma appliqué après le rendu.\n\n1.0 : Aucune correction.\n2.2 : Gamma d'écran sRGB standard — éclaircit les tons moyens."
+    },
+    "pp_brightness": {
+      "label": "Luminosité",
+      "tooltip": "Décalage additif appliqué uniformément à tous les canaux (plage −1 à +1).\n\n⚠ De grands décalages écrêtent les régions claires ou sombres."
+    },
+    "pp_contrast": {
+      "label": "Contraste",
+      "tooltip": "Met à l'échelle les valeurs de pixel autour du gris moyen (0.5).\n\n> 1.0 : Pousse les sombres plus sombres et les clairs plus clairs.\n⚠ Les valeurs supérieures à 2.0 causent un écrêtage significatif."
+    },
+    "pp_saturation": {
+      "label": "Saturation",
+      "tooltip": "Met à l'échelle la saturation des couleurs de l'image finale.\n\n0.0 : Conversion en niveaux de gris.\n1.0 : Aucun changement.\n⚠ Au-delà de 2.0, peut causer un écrêtage des couleurs."
+    },
+    "pp_vignette": {
+      "label": "Vignettage",
+      "tooltip": "Assombrissement radial appliqué depuis les coins vers l'intérieur.\n\n0.2–0.4 : Vignette photographique subtile.\n1.0 : Maximum — les coins approchent le noir."
+    },
+    "viewport_width": {
+      "label": "Largeur (px)",
+      "tooltip": "Largeur de l'image de sortie en pixels.\n\nLe temps de rendu évolue linéairement avec largeur × hauteur."
+    },
+    "viewport_height": {
+      "label": "Hauteur (px)",
+      "tooltip": "Hauteur de l'image de sortie en pixels."
+    },
+    "viewport_real_min": {
+      "label": "Réel min",
+      "tooltip": "Bord gauche de la fenêtre du plan complexe (axe réel).\n\n⚠ Doit être strictement inférieur à réel max."
+    },
+    "viewport_real_max": {
+      "label": "Réel max",
+      "tooltip": "Bord droit de la fenêtre du plan complexe.\n\n⚠ Doit être strictement supérieur à réel min."
+    },
+    "viewport_imag_min": {
+      "label": "Imag min",
+      "tooltip": "Bord inférieur de la fenêtre du plan complexe (axe imaginaire).\n\n⚠ Doit être strictement inférieur à imag max."
+    },
+    "viewport_imag_max": {
+      "label": "Imag max",
+      "tooltip": "Bord supérieur de la fenêtre du plan complexe.\n\n⚠ Doit être strictement supérieur à imag min."
+    },
+    "aa_samples": {
+      "label": "Échantillons AA",
+      "tooltip": "Facteur de suréchantillonnage par axe pour l'anti-aliasing.\n\n1 : Désactivé.\n2 : 2×2 = 4 échantillons par pixel.\n4 : 4×4 = 16 échantillons — qualité maximale.\n\n⚠ Le temps de rendu évolue avec le carré de cette valeur."
+    },
+    "thread_count": {
+      "label": "Threads",
+      "tooltip": "Nombre de threads de travail parallèles.\n\n0 : Auto-détection — utilise tous les cœurs logiques du CPU."
+    },
+    "tile_size": {
+      "label": "Taille de tuile (px)",
+      "tooltip": "Longueur de côté en pixels de chaque tuile de travail.\n\n64 : Par défaut — bon équilibre entre granularité de progression et efficacité."
+    },
+    "output_dpi": {
+      "label": "DPI de sortie",
+      "tooltip": "Valeur PPP intégrée dans les métadonnées des fichiers PNG/TIFF.\n\n72 : Écran.\n150 : Impression web.\n300 : Qualité d'impression standard.\n600 : Haute résolution / archivage."
+    },
+    "bit_depth": {
+      "label": "Profondeur de bits",
+      "tooltip": "Précision des couleurs du fichier de sortie.\n\n8 bits : Standard pour le web et l'écran.\n16 bits : TIFF uniquement — meilleur pour le post-traitement.\n\nEXR est toujours en virgule flottante 32 bits."
+    },
+    "quick_render": {
+      "label": "Rendu rapide (¼ rés.)",
+      "tooltip": "Effectue le rendu au quart des dimensions de pixel configurées avec l'anti-aliasing désactivé.\n\nUtilisez pour vérifier rapidement la composition et les couleurs avant un rendu complet.\n\nLe rendu rapide ne sauvegarde pas de fichier de sortie."
+    },
+    "output_format": {
+      "label": "Format de sortie",
+      "tooltip": "Format de fichier lors de la sauvegarde de l'image rendue.\n\nPNG  — Sans perte, 8 ou 16 bits. Support universel.\nTIFF — Sans perte, 8 ou 16 bits. Idéal pour les flux d'impression professionnels.\nEXR  — Virgule flottante 32 bits. Idéal pour les pipelines de composition HDR."
+    }
+  }
+}

@@ -9,6 +9,9 @@ add_executable(artgen_tests
     test_registry.cpp
     test_output.cpp
     test_new_algorithms.cpp
+    test_missing_algorithms.cpp
+    test_renderer_callbacks.cpp
+    test_output_naming.cpp
 )
 
 target_link_libraries(artgen_tests PRIVATE

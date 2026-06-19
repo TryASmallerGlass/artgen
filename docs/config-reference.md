@@ -74,7 +74,7 @@ Nested object mapping pixels to complex-plane coordinates.
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `max_iterations` | int | `1000` | Iteration cap before a point is considered in-set. |
+| `max_iterations` | int | `1000` | Iteration cap before a point is considered in-set. **Deep zooms require a much higher value** — a viewport range of R units needs at least `max(2000, round(500/sqrt(R)))` iterations to avoid a blank image. |
 | `escape_radius` | float | `2.0` | Magnitude threshold that marks a point as escaped. |
 | `smooth_coloring` | bool | `true` | Enable Linas Vepstas continuous colouring (no banding). |
 | `coloring_mode` | string | `"smooth"` | `"smooth"`, `"histogram_eq"`, or `"orbit_trap"`. |
@@ -106,11 +106,11 @@ Nested object mapping pixels to complex-plane coordinates.
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `nova_type` | string | `"mandelbrot"` | `"mandelbrot"` (z₀=1, c=pixel) or `"julia"` (z₀=pixel, c=seed). |
-| `nova_power` | int | `3` | Polynomial degree. |
+| `nova_power` | int | `3` | Polynomial degree. Must be ≥ 2; values below 2 produce a blank image. |
 | `nova_relaxation` | float | `1.0` | Step-size multiplier R; ≠ 1 creates extra boundary detail. |
-| `nova_seed_r` | float | `1.0` | Fixed c real part (julia mode only). |
+| `nova_seed_r` | float | `1.0` | Fixed c real part (julia mode only). Keep `sqrt(nova_seed_r²+nova_seed_i²)` ∈ [0.8, 2.5] to avoid a flat single-colour image. |
 | `nova_seed_i` | float | `0.0` | Fixed c imaginary part (julia mode only). |
-| `nova_max_iterations` | int | `256` | Per-pixel iteration cap. |
+| `nova_max_iterations` | int | `256` | Per-pixel iteration cap. Increase to 512+ for `nova_type = "julia"` — the default 256 often produces a near-black image in Julia mode. |
 | `nova_tolerance` | float | `1e-6` | Convergence tolerance for Newton step. |
 | `nova_escape_radius` | float | `1e6` | Escape threshold magnitude. |
 | `nova_saturation` | float | `0.8` | HSV saturation for converged basin colouring. |
@@ -148,7 +148,7 @@ Nested object mapping pixels to complex-plane coordinates.
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `attractor_type` | string | `"clifford"` | `"clifford"` or `"dejong"`. |
-| `attractor_a` – `attractor_d` | float | see SceneConfig.h | Four shape parameters. |
+| `attractor_a` – `attractor_d` | float | see SceneConfig.h | Four shape parameters. For Clifford, keep all four in **[−2.0, 2.0]** with at least three having `\|value\| > 1.0` — combinations where `\|b\| < 1.0` and `\|d\| > 1.5` can produce a degenerate orbit and a blank image. |
 | `attractor_iterations` | int | `8000000` | Orbit length (more = denser, smoother). |
 
 ### Ikeda Map

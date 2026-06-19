@@ -117,6 +117,7 @@ void TileRenderer::render(IAlgorithm& algo, PixelBuffer& buf,
     // Algorithms with global spatial state must run as one pass
     if (!algo.is_tileable()) {
         algo.render(buf, vp);
+        if (progress_cb) progress_cb(1, 1);
         return;
     }
 
@@ -144,11 +145,13 @@ void TileRenderer::render(IAlgorithm& algo, PixelBuffer& buf,
     std::atomic<int> done{0};
 
     auto do_tile = [&](const Tile& tile) {
+        if (cancel_flag && cancel_flag->load(std::memory_order_relaxed)) return;
         render_tile(algo, buf, vp, tile);
         int d = ++done;
         if (show_progress && (d % std::max(1, total / 20) == 0 || d == total))
             std::printf("  [%4d/%4d] %.0f%%\n", d, total,
                         100.0 * d / total);
+        if (progress_cb) progress_cb(d, total);
     };
 
     if (n == 1) {
