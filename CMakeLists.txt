@@ -60,6 +60,41 @@ if(ARTGEN_PREVIEW)
     FetchContent_MakeAvailable(SDL2)
 endif()
 
+# ── Optional Dear ImGui GUI ──────────────────────────────────────────────────
+option(ARTGEN_GUI "Build with Dear ImGui GUI" OFF)
+
+if(ARTGEN_GUI)
+    if(NOT ARTGEN_PREVIEW)
+        message(FATAL_ERROR "ARTGEN_GUI requires ARTGEN_PREVIEW=ON (SDL2 backend)")
+    endif()
+
+    FetchContent_Declare(
+        imgui
+        GIT_REPOSITORY https://github.com/ocornut/imgui.git
+        GIT_TAG        v1.91.5
+        GIT_SHALLOW    TRUE
+    )
+    FetchContent_MakeAvailable(imgui)
+
+    add_library(imgui_lib STATIC
+        ${imgui_SOURCE_DIR}/imgui.cpp
+        ${imgui_SOURCE_DIR}/imgui_draw.cpp
+        ${imgui_SOURCE_DIR}/imgui_tables.cpp
+        ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer2.cpp
+    )
+    target_include_directories(imgui_lib PUBLIC
+        ${imgui_SOURCE_DIR}
+        ${imgui_SOURCE_DIR}/backends
+    )
+    target_link_libraries(imgui_lib PUBLIC SDL2::SDL2-static)
+    if(WIN32)
+        target_link_libraries(imgui_lib PUBLIC
+            winmm imm32 version setupapi ole32 oleaut32)
+    endif()
+endif()
+
 # ── Core library ──────────────────────────────────────────────────────────────
 add_library(artgen_core STATIC
     src/core/Color.cpp
@@ -92,6 +127,7 @@ add_library(artgen_core STATIC
     src/output/ExrWriter.cpp
     src/output/stb_impl.cpp
     src/config/SceneConfig.cpp
+    src/core/OutputNaming.cpp
 )
 
 target_include_directories(artgen_core PUBLIC
@@ -124,6 +160,21 @@ endif()
 
 add_executable(artgen src/main.cpp)
 target_link_libraries(artgen PRIVATE artgen_core)
+
+if(ARTGEN_GUI)
+    target_sources(artgen PRIVATE src/gui/Gui.cpp)
+    target_compile_definitions(artgen PRIVATE ARTGEN_GUI)
+    target_include_directories(artgen PRIVATE ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
+    target_link_libraries(artgen PRIVATE imgui_lib)
+
+    # Copy ui/ strings folder next to the executable after every build
+    add_custom_command(TARGET artgen POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_SOURCE_DIR}/ui"
+            "$<TARGET_FILE_DIR:artgen>/ui"
+        COMMENT "Copying ui/ strings to output directory"
+    )
+endif()
 
 enable_testing()
 add_subdirectory(tests)
