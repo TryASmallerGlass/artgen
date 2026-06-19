@@ -66,13 +66,15 @@ struct SceneConfig {
     double multibrot_power = 3.0;
 
     // Strange attractor
-    std::string attractor_type       = "clifford"; // "clifford" | "dejong" | "ikeda"
+    // "ikeda" is a separate top-level algorithm ("algorithm": "ikeda"), not a value
+    // of attractor_type — this field only ever selects between Clifford and De Jong.
+    std::string attractor_type       = "clifford"; // "clifford" | "dejong"
     double      attractor_a          = -1.4;
     double      attractor_b          =  1.6;
     double      attractor_c          =  1.0;
     double      attractor_d          =  0.7;
     double      attractor_u          =  0.9;   // Ikeda: tuning parameter
-    int         attractor_iterations = 5'000'000;
+    int         attractor_iterations = 8'000'000;
 
     // Plasma / Diamond-Square
     float    plasma_roughness = 0.5f;
