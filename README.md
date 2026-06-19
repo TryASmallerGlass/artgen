@@ -2,7 +2,9 @@
 
 A C++20 command-line renderer for generative and fractal art, designed for wall and textile-scale output.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: Non-Commercial](https://img.shields.io/badge/License-Non--Commercial-yellow.svg)](LICENSE)
+
+Source code is free for non-commercial use; commercial use of the software requires a separate license. Generated output (images, animations, etc.) is yours to use commercially without restriction — see [LICENSE](LICENSE).
 
 ---
 
