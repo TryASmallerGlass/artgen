@@ -142,16 +142,6 @@ target_link_libraries(artgen_core PUBLIC
     tinyexr
 )
 
-if(ARTGEN_PREVIEW)
-    target_compile_definitions(artgen_core PUBLIC ARTGEN_WITH_SDL2)
-    target_sources(artgen_core PRIVATE src/core/Preview.cpp)
-    target_link_libraries(artgen_core PUBLIC SDL2::SDL2-static)
-    if(WIN32)
-        target_link_libraries(artgen_core PUBLIC
-            winmm imm32 version setupapi ole32 oleaut32)
-    endif()
-endif()
-
 if(MSVC)
     target_compile_options(artgen_core PRIVATE /W4)
 else()
@@ -160,6 +150,16 @@ endif()
 
 add_executable(artgen src/main.cpp)
 target_link_libraries(artgen PRIVATE artgen_core)
+
+if(ARTGEN_PREVIEW)
+    target_sources(artgen PRIVATE src/preview/Preview.cpp)
+    target_compile_definitions(artgen PRIVATE ARTGEN_WITH_SDL2)
+    target_link_libraries(artgen PRIVATE SDL2::SDL2-static)
+    if(WIN32)
+        target_link_libraries(artgen PRIVATE
+            winmm imm32 version setupapi ole32 oleaut32)
+    endif()
+endif()
 
 if(ARTGEN_GUI)
     target_sources(artgen PRIVATE src/gui/Gui.cpp)

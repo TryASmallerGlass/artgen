@@ -36,11 +36,45 @@
 #define NOMINMAX
 #include <windows.h>
 #include <commdlg.h>
+#else
+#include <array>
+#include <cstdlib>
+#include <cstring>
 #endif
 
 namespace artgen::gui {
 
 // ── File dialog helpers ──────────────────────────────────────────────────────
+
+#ifndef _WIN32
+static bool command_exists(const char* cmd) {
+    std::string check = std::string("command -v ") + cmd + " >/dev/null 2>&1";
+    return std::system(check.c_str()) == 0;
+}
+
+static std::string run_and_capture(const std::string& cmd) {
+    std::array<char, 1024> buf{};
+    std::string result;
+    FILE* pipe = popen(cmd.c_str(), "r");
+    if (!pipe) return {};
+    while (fgets(buf.data(), buf.size(), pipe)) result += buf.data();
+    pclose(pipe);
+    while (!result.empty() && (result.back() == '\n' || result.back() == '\r'))
+        result.pop_back();
+    return result;
+}
+
+// Pulls the first "*.ext" glob out of a Windows-style double-NUL filter string
+// (e.g. "JSON Files\0*.json\0All Files\0*.*\0") for use with zenity/kdialog.
+static std::string first_glob_pattern(const char* filter) {
+    for (const char* p = filter; *p; ) {
+        size_t len = std::strlen(p);
+        if (len > 1 && p[0] == '*' && p[1] == '.') return std::string(p, len);
+        p += len + 1;
+    }
+    return "*";
+}
+#endif
 
 static std::string open_file_dialog(const char* filter) {
 #ifdef _WIN32
@@ -52,8 +86,16 @@ static std::string open_file_dialog(const char* filter) {
     ofn.lpstrFilter = filter;
     ofn.Flags       = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
     if (GetOpenFileNameA(&ofn)) return buf;
-#endif
     return {};
+#else
+    std::string glob = first_glob_pattern(filter);
+    if (command_exists("zenity"))
+        return run_and_capture("zenity --file-selection --file-filter='" + glob + "' 2>/dev/null");
+    if (command_exists("kdialog"))
+        return run_and_capture("kdialog --getopenfilename . '" + glob + "' 2>/dev/null");
+    std::fprintf(stderr, "Warning: no file picker found (install zenity or kdialog)\n");
+    return {};
+#endif
 }
 
 static std::string save_file_dialog(const char* filter, const char* defext) {
@@ -67,8 +109,26 @@ static std::string save_file_dialog(const char* filter, const char* defext) {
     ofn.lpstrDefExt  = defext;
     ofn.Flags        = OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
     if (GetSaveFileNameA(&ofn)) return buf;
-#endif
     return {};
+#else
+    std::string glob = first_glob_pattern(filter);
+    std::string default_name = std::string("untitled.") + defext;
+    if (command_exists("zenity")) {
+        std::string p = run_and_capture("zenity --file-selection --save --confirm-overwrite "
+                                         "--filename='" + default_name + "' --file-filter='" +
+                                         glob + "' 2>/dev/null");
+        if (!p.empty() && std::filesystem::path(p).extension().empty()) p += std::string(".") + defext;
+        return p;
+    }
+    if (command_exists("kdialog")) {
+        std::string p = run_and_capture("kdialog --getsavefilename " + default_name +
+                                         " '" + glob + "' 2>/dev/null");
+        if (!p.empty() && std::filesystem::path(p).extension().empty()) p += std::string(".") + defext;
+        return p;
+    }
+    std::fprintf(stderr, "Warning: no file picker found (install zenity or kdialog)\n");
+    return {};
+#endif
 }
 
 // ── Render job ───────────────────────────────────────────────────────────────
@@ -661,6 +721,9 @@ int run() {
     ImGui_ImplSDLRenderer2_Init(ren);
 
     // ── State ────────────────────────────────────────────────────────────────
+    enum class AppMode { MainMenu, GenerativeArt };
+    AppMode mode = AppMode::MainMenu;
+
     auto languages   = scan_languages();
     int  lang_idx    = 0;  // index into languages
     // Default to "en" if present
@@ -729,12 +792,55 @@ int run() {
         int ww, wh;
         SDL_GetWindowSize(window, &ww, &wh);
 
+        if (mode == AppMode::MainMenu) {
+            // ── Main menu screen ─────────────────────────────────────────────
+            ImGui::SetNextWindowPos(ImVec2(0, 0));
+            ImGui::SetNextWindowSize(ImVec2(static_cast<float>(ww), static_cast<float>(wh)));
+            ImGui::Begin("Main Menu", nullptr,
+                         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+                         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
+
+            const ImVec2 btn_size(280, 48);
+            float center_x = (static_cast<float>(ww) - btn_size.x) * 0.5f;
+            float top_y    = static_cast<float>(wh) * 0.35f;
+
+            auto centered_text = [&](const char* text) {
+                float w = ImGui::CalcTextSize(text).x;
+                ImGui::SetCursorPosX((static_cast<float>(ww) - w) * 0.5f);
+                ImGui::TextUnformatted(text);
+            };
+
+            ImGui::SetCursorPosY(top_y - 60);
+            centered_text("artgen");
+
+            ImGui::SetCursorPos(ImVec2(center_x, top_y));
+            if (ImGui::Button("Generative Art", btn_size)) {
+                mode = AppMode::GenerativeArt;
+            }
+
+            ImGui::SetCursorPos(ImVec2(center_x, top_y + btn_size.y + 16));
+            ImGui::BeginDisabled();
+            ImGui::Button("Module 2 (Coming soon)", btn_size);
+            ImGui::EndDisabled();
+
+            ImGui::SetCursorPos(ImVec2(center_x, top_y + 2 * (btn_size.y + 16)));
+            ImGui::BeginDisabled();
+            ImGui::Button("Module 3 (Coming soon)", btn_size);
+            ImGui::EndDisabled();
+
+            ImGui::End(); // Main Menu
+        } else {
         // ── Left panel: controls ─────────────────────────────────────────────
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(ImVec2(380, static_cast<float>(wh)));
         ImGui::Begin("Controls", nullptr,
                      ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
                      ImGuiWindowFlags_NoCollapse);
+
+        if (ImGui::Button("< Main Menu")) {
+            mode = AppMode::MainMenu;
+        }
+        ImGui::Separator();
 
         // ── Language picker (top-right of controls panel) ────────────────────
         if (!languages.empty()) {
@@ -1054,6 +1160,7 @@ int run() {
         }
 
         ImGui::End(); // Preview
+        } // mode == AppMode::GenerativeArt
 
         ImGui::Render();
         SDL_SetRenderDrawColor(ren, 30, 30, 30, 255);
