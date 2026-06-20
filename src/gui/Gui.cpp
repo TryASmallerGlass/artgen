@@ -117,13 +117,13 @@ static std::string save_file_dialog(const char* filter, const char* defext) {
         std::string p = run_and_capture("zenity --file-selection --save --confirm-overwrite "
                                          "--filename='" + default_name + "' --file-filter='" +
                                          glob + "' 2>/dev/null");
-        if (!p.empty() && p.find('.') == std::string::npos) p += std::string(".") + defext;
+        if (!p.empty() && std::filesystem::path(p).extension().empty()) p += std::string(".") + defext;
         return p;
     }
     if (command_exists("kdialog")) {
         std::string p = run_and_capture("kdialog --getsavefilename " + default_name +
                                          " '" + glob + "' 2>/dev/null");
-        if (!p.empty() && p.find('.') == std::string::npos) p += std::string(".") + defext;
+        if (!p.empty() && std::filesystem::path(p).extension().empty()) p += std::string(".") + defext;
         return p;
     }
     std::fprintf(stderr, "Warning: no file picker found (install zenity or kdialog)\n");

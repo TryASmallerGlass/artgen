@@ -30,7 +30,7 @@ Scene state lives in `SceneConfig` (JSON), not scattered across UI widget state.
 
 ## 5. Test what isn't visual
 
-Algorithm math (color conversions, escape-time iteration, palette interpolation, etc.) gets Catch2 unit tests in `tests/`. GUI layout and interaction are exempt from automated testing but should be manually verified (see `/verify` workflow) before calling a change done.
+Algorithm math (color conversions, escape-time iteration, palette interpolation, etc.) gets Catch2 unit tests in `tests/`. GUI layout and interaction are exempt from automated testing but should be manually verified before calling a change done.
 
 ## 6. Extend the menu, don't bypass it
 
